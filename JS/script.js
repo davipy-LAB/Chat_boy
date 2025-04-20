@@ -18,41 +18,47 @@ function addMessage(text, sender) {
     messageDiv.appendChild(messageContent);
     chatBody.appendChild(messageDiv);
 
-    // Rolagem automática para a última mensagem
-    chatBody.scrollTop = chatBody.scrollHeight;
+    chatBody.scrollTop = chatBody.scrollHeight; // Rolagem automática para a última mensagem
 }
 
-// Função para enviar a mensagem do usuário
-function sendMessage() {
-    const message = userInput.value.trim();
-    if (message === "") return;
+// Função para enviar a mensagem para o backend e obter a resposta
+async function sendMessage() {
+    const userMessage = userInput.value.trim();
 
-    addMessage(message, "user"); // Adiciona a mensagem do usuário
-    userInput.value = ""; // Limpa o campo de input
+    if (userMessage === "") {
+        return; // Se o campo de entrada estiver vazio, não faz nada
+    }
 
-    fetch("http://127.0.0.1:5000/chat", { // 🔥 Porta corrigida para 5000
+    // Adiciona a mensagem do usuário ao chat
+    addMessage(userMessage, "user");
+
+    // Limpa o campo de entrada
+    userInput.value = "";
+
+    // Envia a mensagem para o backend
+    const response = await fetch("http://127.0.0.1:5000/chat", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            addMessage(data.response, "bot"); // Adiciona a resposta da IA
-        })
-        .catch((error) => {
-            console.error("Erro ao enviar mensagem:", error);
-        });
+        body: JSON.stringify({ message: userMessage }),
+    });
+
+    // Converte a resposta para JSON
+    const data = await response.json();
+
+    // Adiciona a resposta do bot ao chat
+    addMessage(data.response, "bot");
 }
 
-// Evento de clique no botão de enviar
-sendButton.addEventListener("click", sendMessage);
-
-// Evento de tecla pressionada no campo de input
-userInput.addEventListener("keydown", function (event) {
+// Função que ativa o envio ao pressionar Enter
+userInput.addEventListener("keypress", (event) => {
     if (event.key === "Enter") {
-        event.preventDefault(); // 🔥 Impede o recarregamento da página
         sendMessage();
     }
+});
+
+// Adiciona o evento de clique no botão de enviar
+sendButton.addEventListener("click", () => {
+    sendMessage();
 });
