@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGuy</title>
+    <link rel="stylesheet" href="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="../Styles/style_chat.css">
+    <script src="../JS/script.js" defer></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="icon" href="DALL·E 2025-02-15 06.49.53 - A digital brain icon representing artificial intelligence. The brain is designed with neon blue circuits and glowing connections, symbolizing a futuri.webp">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="particles-js"></div>
+    <div class="container">
+        <div class="chat">
+            <div class="chat-header">
+                <h1>ChatGuy</h1>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="chat-message bot">
+                    <div class="message-content">
+                        <p class="message-text">Olá, eu sou o ChatGuy! Como posso ajudar você hoje?</p>
+                    </div>
+                </div>
+                <div class="chat-message-user">
+                    <div class="message-content user"></div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Digite sua mensagem aqui...">
+                <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="text">
+                <h1>ChatGuy</h1>
+            </div>
+        </div>
+        <div class="sidebar-body">
+            <p>Desenvolvido por: <a href="https://github.com/davipy-LAB" target="_blank">Davi Dias</a></p>
+        </div>
+        <div class="sidebar-footer">
+            <p>© 2025 ChatGuy. Todos os direitos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

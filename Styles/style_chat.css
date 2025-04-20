@@ -1,0 +1,299 @@
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+body {
+    background: linear-gradient(-45deg, #121213, #313233, #5e5f61, #242425);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    background: radial-gradient(circle, rgba(20,20,20,0.8), black);
+    filter: contrast(120%) brightness(100%);
+}
+
+.text{
+    color:#ffffff;
+}
+
+.sidebar{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1); /* Fundo translúcido */
+    backdrop-filter: blur(5px); /* Efeito de desfoque */
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+}
+
+.sidebar:hover {
+    background: rgba(187, 174, 174, 0.2);
+}
+
+.sidebar a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.sidebar a:hover {
+    text-decoration: underline;
+}
+
+.sidebar .h1{
+    color: #fff;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+.sidebar-header{
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.sidebar-body p{
+    margin-top: 10px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    color: #acabab;
+}
+
+.sidebar-body{
+    margin-top: 20px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    color: #333;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    transition: all 0.3s ease-in-out;
+}
+
+.sidebar-footer{
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 12px;
+    color: #888;
+}
+
+.container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.chat{
+    width: 400px;
+    height: 600px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.chat-header{
+    background-color: #060126;
+    color: #ffffff;
+    padding: 10px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.chat-body{
+    padding: 10px;
+    overflow-y: scroll;
+    height: 400px;
+}
+
+@keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+.chat-message {
+  background-color: #f0f0f0; /* Cor de fundo do balão */
+  color: #333; /* Cor da fonte */
+  border-radius: 20px; /* Borda arredondada */
+  padding: 15px 20px; /* Espaçamento interno */
+  max-width: 100%; /* Tamanho máximo */
+  margin: 10px 0; /* Espaçamento entre balões */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  font-family: 'Poppins', sans-serif; /* Fonte moderna */
+  line-height: 1.6; /* Maior espaçamento entre linhas */
+  animation: fadeIn 0.5s ease-out; /* Animação de entrada */
+  display: flex;    
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.chat-message.user {
+    background-color: #686767; /* Cor do usuário */
+    color: #fff; /* Texto branco */
+    display: flex;
+    background: linear-gradient(-45deg, #ababac, #868686, #5e5f61, #6e6e6e);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    background: radial-gradient(circle, rgba(95, 94, 94, 0.8), rgb(87, 86, 86));
+    filter: contrast(120%) brightness(100%)
+}
+
+.chat-message.bot {
+    background-color: #302f2e; /* Cor do bot */
+    color: #fff; /* Texto branco */
+    display: flex;
+    background: linear-gradient(-45deg, #28282b, #313233, #5e5f61, #242425);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    background: radial-gradient(circle, rgba(20,20,20,0.8), black);
+    filter: contrast(120%) brightness(100%)
+}
+
+.chat-input {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    background-color: #f2f2f2;
+    border-top: 1px solid #ccc;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 5px;
+    border: none;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    color: #333;
+}
+
+.chat-input button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.chat-input button:hover {
+    background-color: #0056b3; /* Cor mais escura */
+    box-shadow: 0 0 10px rgba(0, 91, 187, 0.7);
+    transform: scale(1.1); /* Aumenta um pouco */
+}
+
+.chat-message.user .message-content {
+    text-align: left;
+    font-weight: bold;
+    font: 1em sans-serif;
+}
+
+.chat-message.bot .message-content {
+    text-align: flex-end;
+    font-weight: bold;
+    font: 1em sans-serif;
+}
+
+.message-content{
+    font: 1em sans-serif;
+}
+
+/* 🔽 Responsividade para telas menores (tablets e celulares) */
+@media (max-width: 768px) {
+    .chat-container {
+        width: 90%;
+        max-width: none;
+    }
+
+    .chat {
+        width: 100%;
+        height: auto;
+    }
+
+    .chat-body {
+        height: 350px;
+    }
+
+    #userInput {
+        font-size: 1rem;
+        padding: 10px;
+    }
+
+    #sendButton {
+        padding: 10px;
+        font-size: 1rem;
+    }
+
+    .sidebar {
+        width: 200px; /* Reduz a largura da sidebar */
+        height: 100%;
+        padding: 15px;
+    }
+
+    .sidebar-header {
+        font-size: 18px;
+    }
+}
+
+/* 🔽 Responsividade para telas muito pequenas (celulares pequenos) */
+@media (max-width: 480px) {
+    .chat-container {
+        width: 100%;
+        border-radius: 0;
+    }
+
+    .chat {
+        height: auto;
+        border-radius: 0;
+    }
+
+    .chat-body {
+        height: 300px;
+    }
+
+    .chat-message {
+        font-size: 0.9rem;
+        padding: 8px;
+    }
+
+    .sidebar {
+        width: 180px; /* Sidebar menor */
+        padding: 10px;
+    }
+
+    .chat-input {
+        flex-direction: column; /* Faz o botão ficar abaixo do input */
+        align-items: stretch;
+    }
+
+    .chat-input input {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .chat-input button {
+        width: 100%;
+        text-align: center;
+    }
+}
