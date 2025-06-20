@@ -1,5 +1,5 @@
+blis==0.7.11
+gunicorn==21.2.0
 flask==2.3.3
 flask-cors==4.0.0
 spacy==3.7.2
-blis==0.7.11
-gunicorn==21.2.0
