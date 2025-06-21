@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatGuy</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_chat.css') }}">">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_chat.css') }}">
     <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +17,7 @@
 </head>
 <body>
     <div id="tsparticles"></div>
+    <div class="overlay" id="overlay"></div> 
     <div class="container">
         <div class="chat">
             <div class="chat-header">
