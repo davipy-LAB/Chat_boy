@@ -455,6 +455,7 @@ def search_web(query):
 
 
 # Função para obter a resposta da IA
+# Função para obter a resposta da IA
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
 
@@ -482,42 +483,68 @@ def get_response(user_message):
         for et_topic in entertainment_topics:
             if et_topic in user_message_normalized:
                 topic = et_topic
-                break # Encontrou um tópico específico, sai do loop
+                break
         return get_entertainment_news(topic)
 
-    # --- Lógica para Pesquisa na Web (Google Custom Search) ---
-    # Defina aqui quais tipos de perguntas devem acionar a busca na web.
-    # A ordem importa: se uma pergunta pode ser respondida por um diálogo OU pela busca na web,
-    # a que aparecer primeiro aqui será executada.
-    search_triggers = [
-        "qual ", "quando ", "quem é ", "o que é ", "onde é ",
-        "que ano lança ", "data de lançamento ", "me fale sobre " # Cuidado com "me fale sobre", pode sobrepor diálogos locais
+    # --- Lógica para "me fale sobre" (PRIORIDADE ALTA, para tópicos conhecidos) ---
+    # Verifica se a frase começa com "me fale sobre"
+    if user_message_normalized.startswith("me fale sobre "):
+        query_for_search = user_message[len("me fale sobre "):].strip()
+        known_topics = [
+            "tecnologia", "ia", "machine learning", "musica", "arte", "esportes",
+            "jesus", "deus", "politica", "economia", "ciencia", "historia do brasil",
+            "voce" # Adicione 'voce' aqui para "me fale sobre voce"
+        ]
+        
+        # Normaliza a query para comparar com os tópicos conhecidos
+        query_normalized_for_check = normalize_text(query_for_search)
+
+        is_known_topic = False
+        for k_topic in known_topics:
+            # Verifica se o tópico conhecido está contido na query
+            if k_topic in query_normalized_for_check:
+                is_known_topic = True
+                break
+        
+        if not is_known_topic: # Se NÃO for um tópico conhecido, pesquisa na web
+            return search_web(query_for_search)
+        # Se for um tópico conhecido, o código continua para as respostas fixas abaixo.
+
+
+    # --- Lógica para Outras Pesquisas na Web (Google Custom Search) ---
+    # Gatilhos específicos, mais longos devem vir primeiro na lista para serem verificados
+    search_triggers_web = [
+        "quando vai ", # NOVO: Para a lógica "Entendo sua questão..."
+        "que ano lança ",
+        "data de lançamento ",
+        "qual ",
+        "quando ",
+        "quem é ",
+        "o que é ",
+        "onde é "
     ]
+    # Classifica os gatilhos por tamanho (do maior para o menor)
+    search_triggers_web.sort(key=len, reverse=True)
 
-    for trigger in search_triggers:
+    for trigger in search_triggers_web:
         if user_message_normalized.startswith(trigger):
-            query_for_search = user_message
-            if trigger.endswith(" "): # Remove o gatilho da frente da query
-                 query_for_search = user_message[len(trigger):].strip()
+            query_for_search = user_message[len(trigger):].strip()
             
-            # Exceção para "me fale sobre": só pesquisa se não for um tópico que já tem diálogo fixo
-            if trigger == "me fale sobre ":
-                known_topics = ["tecnologia", "ia", "machine learning", "musica", "arte", "esportes", "jesus", "deus", "politica", "economia", "ciencia", "historia do brasil"]
-                if any(k in user_message_normalized for k in known_topics):
-                    # Se for um tópico conhecido, deixa a lógica passar para os diálogos temáticos
-                    pass 
-                else:
-                    return search_web(query_for_search)
+            search_result = search_web(query_for_search)
+            
+            # Adiciona a frase prefixada apenas para o gatilho "quando vai "
+            if trigger == "quando vai ":
+                return "Entendo sua questão, segundo meus dados, segue uma analise: " + search_result
             else:
-                return search_web(query_for_search)
+                # Para todos os outros gatilhos de busca, retorna o resultado direto
+                return search_result
 
-
-    # --- Busca em respostas rápidas (se a pesquisa na web não foi acionada)
+    # --- Busca em respostas rápidas (este bloco só será alcançado se NENHUMA lógica acima foi ativada) ---
     for key in responses:
         if key in user_message_normalized:
             return random.choice(responses[key])
 
-    # --- Busca em diálogos temáticos (se a pesquisa na web não foi acionada)
+    # --- Busca em diálogos temáticos (este bloco só será alcançado se NENHUMA lógica acima foi ativada) ---
     for tema, lista in dialogues.items():
         if tema.lower() in user_message_normalized:
             return random.choice(lista)
