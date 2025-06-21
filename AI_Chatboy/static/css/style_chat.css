@@ -105,17 +105,18 @@ body {
     height: 100vh;
     position: relative;
     z-index: 5; /* Acima do tsparticles */
-    /* flex-grow: 1; (Pode ser útil se o body tiver display: flex e você quiser que o container preencha o espaço) */
 }
 
 .chat {
     width: 400px;
-    height: 600px;
+    height: 600px; /* Altura padrão para desktop */
     background-color: #ffffff; /* Fundo padrão do chat */
     border-radius: 10px;
-    overflow: hidden;
+    overflow: hidden; /* Importante para que o conteúdo não vaze */
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 6; /* Acima do container base (que tem 5) */
+    z-index: 6;
+    display: flex; /* Adicionado para organizar header, body e input */
+    flex-direction: column; /* Coloca os filhos em coluna */
 }
 
 .chat-header {
@@ -126,12 +127,14 @@ body {
     font-size: 20px;
     font-weight: bold;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    flex-shrink: 0; /* Impede que o cabeçalho encolha */
 }
 
 .chat-body {
     padding: 10px;
     overflow-y: scroll;
-    height: 400px;
+    flex-grow: 1; /* Faz o corpo do chat ocupar o espaço restante */
+    /* height: 400px; <-- Removido para desktop/default, flex-grow gerencia */
 }
 
 @keyframes fadeIn {
@@ -190,6 +193,7 @@ body {
     align-items: center;
     background-color: #f2f2f2;
     border-top: 1px solid #ccc;
+    flex-shrink: 0; /* Impede que o input encolha */
 }
 
 .chat-input input {
@@ -263,6 +267,7 @@ body {
         left: -250px; /* Usa a largura original para esconder */
         width: 250px; /* Garante a largura padrão aqui (se não for alterada por outras media queries) */
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
+        transition: left 0.3s ease-in-out, background 0.3s ease-in-out;
     }
 
     /* Quando a sidebar estiver "aberta" (classe adicionada via JS) */
@@ -272,21 +277,57 @@ body {
 
     /* Remova qualquer "menu-button" ou ícone de hamburger que possa estar aparecendo */
     .menu-button {
-        display: none !important; /* Força o botão de menu a não aparecer em mobile */
+        display: none !important;
     }
 
-    /* ... Mantenha os outros estilos de .container, .chat, etc., que você já tem para mobile ... */
-}
+    /* Ajustes para o CONTAINER principal em mobile */
+    .container {
+        width: 100%; /* Ocupa a largura total */
+        height: 100vh; /* Ocupa a altura total da viewport */
+    }
 
-/* Ajustes para telas MUITO pequenas (celulares pequenos) */
-@media (max-width: 480px) {
+    /* Ajustes para o CHAT em telas entre 481px e 768px (o que cobriria o S24 FE na prática) */
     .chat {
-        width: 98%; /* Quase 100% para celular muito pequeno */
-        border-radius: 10px; /* Bordas retas em telas muito pequenas */
+        width: 90%; /* Ajuste a largura do chat */
+        max-width: 500px; /* Limita a largura máxima para que não fique gigante em tablets */
+        height: 90vh; /* Aumenta a altura do chat para telas maiores */
+        border-radius: 10px; /* Mantém bordas arredondadas */
     }
 
     .chat-body {
-        height: calc(80vh - 120px); /* Ajuste a altura para telas menores */
+        height: calc(90vh - 120px); /* Ajusta a altura do corpo do chat, deixando espaço para header e input */
+    }
+
+    .chat-input {
+        flex-direction: column; /* Empilha input e botão */
+        align-items: stretch; /* Estica para a largura total */
+        padding: 8px; /* Ajusta o padding para ser mais compacto */
+    }
+
+    .chat-input input {
+        margin-bottom: 8px; /* Mais espaço entre input e botão */
+        font-size: 1rem; /* Tamanho de fonte padrão para mobile */
+        padding: 8px; /* Aumenta o padding do input */
+    }
+
+    .chat-input button {
+        width: 100%; /* Botão ocupa toda a largura */
+        margin-left: 0; /* Remove margem lateral */
+        font-size: 1rem;
+        padding: 8px; /* Aumenta o padding do botão */
+    }
+}
+
+/* Regras para telas MUITO pequenas (celulares pequenos), como 480px e abaixo */
+@media (max-width: 480px) {
+    .chat {
+        width: 98%; /* Quase 100% para celular muito pequeno */
+        border-radius: 10px; /* Mantenha as bordas arredondadas aqui */
+        height: 95vh; /* Pode aumentar a altura para ocupar quase toda a tela */
+    }
+
+    .chat-body {
+        height: calc(95vh - 120px); /* Ajuste a altura do corpo do chat */
     }
 
     .chat-message {
@@ -297,21 +338,22 @@ body {
     .sidebar {
         width: 180px; /* Sidebar menor */
         padding: 10px;
-        /* ESSENCIAL: Ajustar o 'left' para corresponder à nova largura */
         left: -180px; /* Esconde a sidebar para a esquerda com base na sua nova largura */
     }
+    /* As regras para .chat-input, input, button já vêm da media query de 768px e são adequadas aqui */
 }
 
 /* Ajustes para telas menores que 360px (smartphones pequenos) */
 @media (max-width: 360px) {
-    /* Ajusta o chat para ocupar toda a largura disponível */
     .chat {
         width: 100%;
         height: 100vh;
+        border-radius: 0; /* Remove bordas para ocupar a tela inteira */
     }
 
-    /* Ajusta o tamanho da fonte do chat */
     .chat-header, .chat-message, .chat-input input, .chat-input button {
-        font-size: 14px; /* Reduz o tamanho da fonte para telas pequenas */
+        font-size: 14px;
     }
+
+    /* As regras de .chat-input, input, button já vêm da media query de 768px ou 480px e são adequadas */
 }
