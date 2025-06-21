@@ -4,7 +4,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
+  z-index: -1; /* Essencial: coloca o tsparticles no fundo */
 }
 
 @keyframes gradientMove {
@@ -14,31 +14,45 @@
 }
 
 body {
-    background: linear-gradient(-45deg, #121213, #313233, #5e5f61, #242425);
-    background-size: 400% 400%;
-    animation: gradientMove 15s ease infinite;
-    background: radial-gradient(circle, rgba(20,20,20,0.8), black);
-    filter: contrast(120%) brightness(100%);
+    /* REMOVA OU COMENTE AS LINHAS DE 'BACKGROUND' AQUI.
+       O fundo será providenciado pelo tsParticles via JS e seu z-index. */
+    /* background: linear-gradient(-45deg, #121213, #313233, #5e5f61, #242425); */
+    /* background: radial-gradient(circle, rgba(20,20,20,0.8), black); */
+
+    /* Mantenha a animação e o filtro se quiser que eles afetem TUDO (incluindo o tsparticles) */
+    background-size: 400% 400%; /* Pode não ser visível se o tsParticles for o fundo */
+    animation: gradientMove 15s ease infinite; /* Pode não ser visível se o tsParticles for o fundo */
+    filter: contrast(120%) brightness(100%); /* Isso vai afetar a aparência final do tsParticles também */
+
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Importante para evitar barras de rolagem extra */
+    display: flex; /* Mantém a organização de container e sidebar */
+    justify-content: center; /* Centraliza o container principal horizontalmente */
+    align-items: center; /* Centraliza o container principal verticalmente */
+    min-height: 100vh; /* Garante que o body ocupe a altura total da viewport */
+    color: #fff; /* Definir uma cor padrão para o texto que pode estar sem cor */
 }
 
-.text{
-    color:#ffffff;
+.text {
+    color: #ffffff;
 }
 
-.sidebar{
+.sidebar {
     position: fixed;
     top: 0;
     left: 0;
     width: 250px;
     height: 100vh;
-    background-color: #ffffff;
+    /* background-color: #ffffff; / / Remova, pois está sobrescrito pela linha abaixo */
     padding: 20px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.1); /* Fundo translúcido */
     backdrop-filter: blur(5px); /* Efeito de desfoque */
-    padding: 20px;
+    /* padding: 20px; / / Remova, já está definido acima */
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease-in-out;
+    z-index: 10; /* OK, acima do tsparticles */
 }
 
 .sidebar:hover {
@@ -55,61 +69,68 @@ body {
     text-decoration: underline;
 }
 
-.sidebar .h1{
+.sidebar h1 { /* Corrigido de .sidebar .h1 para .sidebar h1 - se for um <h1> direto */
     color: #fff;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
-.sidebar-header{
+.sidebar-header {
     text-align: center;
     font-size: 20px;
     font-weight: bold;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
-.sidebar-body p{
+.sidebar-body p {
     margin-top: 10px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: 16px;
     color: #acabab;
 }
 
-.sidebar-body{
+.sidebar-body {
     margin-top: 20px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: 16px;
-    color: #333;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-    transition: all 0.3s ease-in-out;
+    color: #333; /* Pode ser sobrescrito pelo color: #fff; no body se o texto não tiver cor específica */
+    /* REMOVER estas propriedades se não forem intencionais para esta DIV específica */
+    /* box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2); */
+    /* border-top-right-radius: 10px; */
+    /* border-bottom-right-radius: 10px; */
+    /* transition: all 0.3s ease-in-out; */
 }
 
-.sidebar-footer{
+.sidebar-footer {
     position: absolute;
     bottom: 20px;
     left: 20px;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: 12px;
     color: #888;
+    z-index: 10; /* OK */
 }
 
-.container{
+.container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    position: relative; /* <-- ESSENCIAL: Permite que o z-index funcione */
+    z-index: 5; /* <-- ESSENCIAL: Coloca o container acima do tsparticles (-1) */
+    /* Se o container precisa ocupar a largura total do espaço que o body flexbox dá, adicione: */
+    /* flex-grow: 1; */
 }
 
-.chat{
+.chat {
     width: 400px;
     height: 600px;
     background-color: #ffffff;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    /* z-index: 6; / / Não é estritamente necessário se o container já tem z-index, mas pode ser mantido */
 }
 
-.chat-header{
+.chat-header {
     background-color: #060126;
     color: #ffffff;
     padding: 10px;
@@ -119,7 +140,7 @@ body {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
-.chat-body{
+.chat-body {
     padding: 10px;
     overflow-y: scroll;
     height: 400px;
@@ -134,7 +155,7 @@ body {
       opacity: 1;
       transform: translateY(0);
     }
-  }
+}
 
 .chat-message {
   background-color: #f0f0f0; /* Cor de fundo do balão */
@@ -147,7 +168,7 @@ body {
   font-family: 'Poppins', sans-serif; /* Fonte moderna */
   line-height: 1.6; /* Maior espaçamento entre linhas */
   animation: fadeIn 0.5s ease-out; /* Animação de entrada */
-  display: flex;    
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
@@ -224,13 +245,13 @@ body {
     font: 1em sans-serif;
 }
 
-.message-content{
+.message-content {
     font: 1em sans-serif;
 }
 
 /* 🔽 Responsividade para telas menores (tablets e celulares) */
 @media (max-width: 768px) {
-    .chat-container {
+    .chat-container { /* Não vejo .chat-container no seu HTML */
         width: 90%;
         max-width: none;
     }
@@ -267,7 +288,7 @@ body {
 
 /* 🔽 Responsividade para telas muito pequenas (celulares pequenos) */
 @media (max-width: 480px) {
-    .chat-container {
+    .chat-container { /* Não vejo .chat-container no seu HTML */
         width: 100%;
         border-radius: 0;
     }

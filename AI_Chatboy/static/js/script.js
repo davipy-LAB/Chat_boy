@@ -22,7 +22,7 @@ function addMessage(text, sender) {
 }
 
 // Função para enviar a mensagem para o backend e obter a resposta
-async function sendMessage() {
+async function sendMessage() { // <-- Esta é a ÚNICA definição de sendMessage
     const userMessage = userInput.value.trim();
 
     if (userMessage === "") {
@@ -33,17 +33,6 @@ async function sendMessage() {
     addMessage(userMessage, "user");
 
     // Limpa o campo de entrada
-    userInput.value = "";
-
-// Função para enviar a mensagem para o backend e obter a resposta
-async function sendMessage() {
-    const userMessage = userInput.value.trim();
-
-    if (userMessage === "") {
-        return;
-    }
-
-    addMessage(userMessage, "user");
     userInput.value = "";
 
     let backendUrl;
@@ -63,18 +52,12 @@ async function sendMessage() {
         body: JSON.stringify({ message: userMessage }),
     });
 
-    const data = await response.json();
-    addMessage(data.response, "bot");
-}
-
-// ... (restante do seu código JS) ...
-
     // Converte a resposta para JSON
     const data = await response.json();
 
     // Adiciona a resposta do bot ao chat
     addMessage(data.response, "bot");
-}
+} // <-- Certifique-se de que esta é a chave de fechamento correta para sendMessage
 
 // Função que ativa o envio ao pressionar Enter
 userInput.addEventListener("keypress", (event) => {
