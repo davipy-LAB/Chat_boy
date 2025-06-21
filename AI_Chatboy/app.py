@@ -217,6 +217,50 @@ if "artista favorito" not in responses:
         "A arte é subjetiva, e cada pessoa tem seus próprios gostos!"
     ]
 
+if "sobre esportes" not in responses:
+    responses["sobre esportes"] = [
+        "Esportes são uma ótima maneira de se manter ativo e saudável! Você pratica algum?",
+        "Posso falar sobre esportes populares, como futebol, basquete ou vôlei!"
+    ]
+
+if "jogo do flamengo" not in responses:
+    responses["jogo do flamengo"] = [
+        "O Flamengo tem uma rica história e muitos títulos. Qual é o seu jogador favorito, inclusive, O jogo do Flamengo X Chealse ontem foi lendário!"
+    ]
+
+if "sobre jesus" not in responses:
+    responses["sobre jesus"] = [
+        "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
+    ]
+
+if "sobre deus" not in responses:
+    responses["Deus"] = [
+        "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
+        "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
+    ]
+if "politica" not in responses:
+    responses["politica"] = [
+        "Política é um assunto complexo e muitas vezes polêmico. É importante discutir com respeito e ouvir diferentes opiniões.",
+        "Você tem interesse em política? Posso falar sobre sistemas políticos, eleições e mais!"
+    ]
+
+if "economia" not in responses:
+    responses["economia"] = [
+        "A economia estuda como as sociedades usam recursos escassos para produzir bens e serviços.",
+        "Posso explicar conceitos econômicos, como oferta e demanda, se você quiser!"
+    ]
+
+if "sobre ciencia" not in responses:
+    responses["sobre ciencia"] = [
+        "A ciência é fascinante! Ela nos ajuda a entender o mundo ao nosso redor.",
+        "Posso falar sobre física, química, biologia e muito mais!"
+    ]
+
+if "historia do brasil" not in responses:
+    responses["historia do brasil"] = [
+        "A história do Brasil é rica e diversa, desde a época dos indígenas até a colonização portuguesa.",
+        "Posso falar sobre eventos importantes, como a independência e a república!"
+    ]
 # Função para normalizar strings (remove acentos e coloca em minúsculas)
 def normalize_text(text):
     text = text.strip().lower()
