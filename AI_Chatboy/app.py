@@ -1,18 +1,16 @@
 import random
+import os
+from dotenv import load_dotenv
 import unicodedata
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-import requests # Importe a biblioteca requests
-import re # Importe a biblioteca de expressões regulares para a busca web
+import requests
+import re
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# Classe de contexto para armazenar informações do usuário
+# --- Classe de contexto para armazenar informações do usuário ---
 class Context:
     def __init__(self):
         self.context = {}
@@ -23,26 +21,32 @@ class Context:
     def get_context(self, key):
         return self.context.get(key, None)
 
-# Inicializa o contexto
+# Inicializa o contexto global
 context = Context()
-context.set_context("user_name", "ChatGuy")
+
+# --- CHAME load_dotenv() AQUI! ---
+load_dotenv()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 # --- CHAVE DA API E CONFIGURAÇÕES DO CLIMA ---
-OPENWEATHER_API_KEY = "576cfa35b8327b3792dc2ea2ca55508e" # Sua chave de API do OpenWeatherMap
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 # --- CHAVE DA API E CONFIGURAÇÕES DE NOTÍCIAS (NEWSAPI.ORG) ---
-NEWSAPI_API_KEY = "df45bb6f22084c9f91c80fd3de024aa8"
+NEWSAPI_API_KEY = os.getenv('NEWSAPI_API_KEY')
+if not NEWSAPI_API_KEY:
+    raise ValueError("A chave da API do NewsAPI não foi encontrada. Por favor, defina a variável de ambiente NEWSAPI_API_KEY.")
 NEWSAPI_BASE_URL = "https://newsapi.org/v2/top-headlines"
 
 # --- NOVAS CHAVES DA API E CONFIGURAÇÕES DO GOOGLE CUSTOM SEARCH ---
-# SUAS CHAVES JÁ FORAM INSERIDAS AQUI!
-GOOGLE_SEARCH_API_KEY = "AIzaSyAirOJFZCOUv9cwDwEW05mj1TiRCAb_zXw" # Sua chave de API do Google Search
-GOOGLE_CSE_ID = "36180827481464d90" # Seu ID do Mecanismo de Busca Personalizado
+GOOGLE_SEARCH_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
+GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID')
 GOOGLE_SEARCH_BASE_URL = "https://www.googleapis.com/customsearch/v1"
 
-# Você pode definir uma cidade padrão para quando o usuário não especificar uma
-DEFAULT_CITY = "Rio de Janeiro" # Definido como Rio de Janeiro, Brasil
+DEFAULT_CITY = "Rio de Janeiro"
 
 # Dicionário de diálogos temáticos
 dialogues = {
@@ -314,7 +318,6 @@ def normalize_text(text):
 # Função para obter informações do clima usando a API do OpenWeatherMap
 def get_weather_info(city_name=None):
     if not city_name:
-        # Tenta obter a cidade do contexto, ou usa uma padrão
         city_name = context.get_context("user_city")
         if not city_name:
             city_name = DEFAULT_CITY
@@ -322,13 +325,13 @@ def get_weather_info(city_name=None):
     params = {
         "q": city_name,
         "appid": OPENWEATHER_API_KEY,
-        "units": "metric",  # Para obter temperatura em Celsius
-        "lang": "pt_br"     # Para obter descrição em português
+        "units": "metric",
+        "lang": "pt_br"
     }
 
     try:
         response = requests.get(OPENWEATHER_BASE_URL, params=params)
-        response.raise_for_status()  # Levanta um erro para status HTTP ruins (4xx ou 5xx)
+        response.raise_for_status()
         weather_data = response.json()
 
         if weather_data and weather_data.get("main"):
@@ -337,9 +340,8 @@ def get_weather_info(city_name=None):
             description = weather_data["weather"][0]["description"]
             city_name_returned = weather_data["name"]
 
-            # Salva a última cidade pesquisada no contexto, se for diferente da padrão
             if city_name_returned.lower() != DEFAULT_CITY.lower():
-                 context.set_context("user_city", city_name_returned)
+                context.set_context("user_city", city_name_returned)
 
             return (f"O clima em {city_name_returned} está {description}, "
                     f"com temperatura de {temp:.1f}°C e sensação térmica de {feels_like:.1f}°C.")
@@ -351,7 +353,6 @@ def get_weather_info(city_name=None):
         return "Desculpe, estou com problemas para acessar as informações do clima no momento."
     except KeyError:
         return f"Não consegui encontrar informações climáticas detalhadas para '{city_name}'. Tente novamente mais tarde."
-
 # --- FUNÇÃO PARA OBTER NOTÍCIAS DE ENTRETENIMENTO (NEWSAPI) ---
 def get_entertainment_news(topic=None):
     default_keywords = "games OR filmes OR series OR musica OR celebridades OR cultura pop"
