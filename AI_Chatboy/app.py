@@ -407,7 +407,9 @@ def search_web(query):
         "key": GOOGLE_SEARCH_API_KEY,
         "cx": GOOGLE_CSE_ID,
         "q": query,
-        "num": 3 # Número de resultados que você quer (máx 10 por requisição)
+        "num": 5, # Número de resultados a serem retornados
+        "hl": "pt", # Define o idioma dos resultados como português
+        "dateRestrict": "y1" # Restringe os resultados ao último ano (mais recente)
     }
 
     try:
