@@ -35,14 +35,39 @@ async function sendMessage() {
     // Limpa o campo de entrada
     userInput.value = "";
 
+// Função para enviar a mensagem para o backend e obter a resposta
+async function sendMessage() {
+    const userMessage = userInput.value.trim();
+
+    if (userMessage === "") {
+        return;
+    }
+
+    addMessage(userMessage, "user");
+    userInput.value = "";
+
+    let backendUrl;
+    // Verifica se o host atual é localhost ou 127.0.0.1
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        backendUrl = "http://127.0.0.1:5000/chat"; // URL para teste local
+    } else {
+        backendUrl = window.location.origin + "/chat"; // URL para o deploy (Render)
+    }
+
     // Envia a mensagem para o backend
-    const response = await fetch("https://chatboy-el6y.onrender.com/chat" , {
+    const response = await fetch(backendUrl, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({ message: userMessage }),
     });
+
+    const data = await response.json();
+    addMessage(data.response, "bot");
+}
+
+// ... (restante do seu código JS) ...
 
     // Converte a resposta para JSON
     const data = await response.json();
@@ -62,3 +87,35 @@ userInput.addEventListener("keypress", (event) => {
 sendButton.addEventListener("click", () => {
     sendMessage();
 });
+
+// Adiciona o tsparticles
+tsParticles.load("tsparticles", {
+      particles: {
+        number: { value: 80 },
+        color: { value: "#ffffff" },
+        shape: { type: "circle" },
+        opacity: { value: 0.5 },
+        size: { value: 3 },
+        move: { enable: true, speed: 1 },
+        links: {
+          enable: true,
+          color: "#ffffff",
+          distance: 150,
+          opacity: 0.4,
+          width: 1
+        }
+      },
+      interactivity: {
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
+        },
+        modes: {
+          repulse: { distance: 100 },
+          push: { quantity: 4 }
+        }
+      },
+      background: {
+        color: "#0d1117" /* ou a cor que tu quiser */
+      }
+    });
