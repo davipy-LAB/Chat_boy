@@ -36,7 +36,7 @@ async function sendMessage() {
     userInput.value = "";
 
     // Envia a mensagem para o backend
-    const response = await fetch("window.location.origin" + "/chat", {
+    const response = await fetch("https://chatboy-el6y.onrender.com/chat" , {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
