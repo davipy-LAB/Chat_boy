@@ -233,11 +233,23 @@ if "sobre jesus" not in responses:
         "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
     ]
 
+if "de jesus" not in responses:
+    responses["de jesus"] = [
+        "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
+    ]
+
 if "sobre deus" not in responses:
-    responses["Deus"] = [
+    responses["sobre deus"] = [
         "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
         "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
     ]
+
+if "de deus" not in responses:
+    responses["de deus"] = [
+        "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
+        "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
+    ]
+
 if "politica" not in responses:
     responses["politica"] = [
         "Política é um assunto complexo e muitas vezes polêmico. É importante discutir com respeito e ouvir diferentes opiniões.",
