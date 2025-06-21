@@ -3,6 +3,7 @@ import unicodedata
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests # Importe a biblioteca requests
+import re # Importe a biblioteca de expressões regulares para a busca web
 
 app = Flask(__name__)
 CORS(app)
@@ -27,9 +28,18 @@ context = Context()
 context.set_context("user_name", "ChatGuy")
 
 # --- CHAVE DA API E CONFIGURAÇÕES DO CLIMA ---
-OPENWEATHER_API_KEY ="576cfa35b8327b3792dc2ea2ca55508e" # Sua chave de API do OpenWeatherMap
-# MUDEI A URL BASE AQUI para a que aceita o parâmetro 'q' (nome da cidade)
-OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather" 
+OPENWEATHER_API_KEY = "576cfa35b8327b3792dc2ea2ca55508e" # Sua chave de API do OpenWeatherMap
+OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+
+# --- CHAVE DA API E CONFIGURAÇÕES DE NOTÍCIAS (NEWSAPI.ORG) ---
+NEWSAPI_API_KEY = "df45bb6f22084c9f91c80fd3de024aa8"
+NEWSAPI_BASE_URL = "https://newsapi.org/v2/top-headlines"
+
+# --- NOVAS CHAVES DA API E CONFIGURAÇÕES DO GOOGLE CUSTOM SEARCH ---
+# SUAS CHAVES JÁ FORAM INSERIDAS AQUI!
+GOOGLE_SEARCH_API_KEY = "AIzaSyAirOJFZCOUv9cwDwEW05mj1TiRCAb_zXw" # Sua chave de API do Google Search
+GOOGLE_CSE_ID = "36180827481464d90" # Seu ID do Mecanismo de Busca Personalizado
+GOOGLE_SEARCH_BASE_URL = "https://www.googleapis.com/customsearch/v1"
 
 # Você pode definir uma cidade padrão para quando o usuário não especificar uma
 DEFAULT_CITY = "Rio de Janeiro" # Definido como Rio de Janeiro, Brasil
@@ -94,6 +104,10 @@ dialogues = {
         # Estas respostas serão substituídas pela função de clima
         "Buscando informações sobre o clima...",
         "Um momento, estou verificando o clima para você."
+    ],
+    "noticias": [ # Adicionado para a intenção de notícias gerais
+        "Buscando as últimas notícias de entretenimento para você...",
+        "Um instante, estou verificando as notícias do mundo do entretenimento."
     ]
 }
 
@@ -116,8 +130,7 @@ responses = {
         "Sou um assistente virtual criado para ajudar!",
         "Sou um chatbot treinado em várias áreas, pronto para conversar!"
     ],
-    # A entrada "me fale sobre o clima" será tratada pela função get_weather_info
-    "me fale sobre o clima": [], # Deixamos vazio ou removemos, pois será tratado na lógica de intenção
+    "me fale sobre o clima": [],
     "eu te amo": ["Eu também te amo! 💙", "Amo ajudar você!"],
     "qual e seu jogo favorito": ["Adoro The Witcher!", "Meu jogo favorito é The Witcher!"],
     "qual e seu filme favorito": ["Adoro Matrix!", "Meu filme favorito é Matrix!"],
@@ -175,14 +188,22 @@ responses = {
     "me conte uma piada": [
         "Por que o computador foi ao médico? Porque estava com um vírus! 😄",
         "O que o zero disse para o oito? Belo cinto!"
-    ]
+    ],
+    "noticias": [], # Deixamos vazio, será tratado pela lógica de intenção
+    "ultimas noticias": [],
+    "noticias de hoje": [],
+    "noticias de entretenimento": [],
+    "noticias de filmes": [],
+    "noticias de series": [],
+    "noticias de jogos": [],
+    "noticias de musica": []
 }
 
 if "me fale sobre" in responses:
-        responses["me fale sobre"].extend([
-            "Você gostaria de saber mais sobre algum assunto específico?",
-            "Posso falar sobre tecnologia, ciência, cultura pop e muito mais!"
-        ])
+    responses["me fale sobre"].extend([
+        "Você gostaria de saber mais sobre algum assunto específico?",
+        "Posso falar sobre tecnologia, ciência, cultura pop e muito mais!"
+    ])
 
 if "me fale sobre tecnologia" not in responses:
     responses["me fale sobre tecnologia"] = [
@@ -274,7 +295,7 @@ if "economia" not in responses:
 
 if "sobre ciencia" not in responses:
     responses["sobre ciencia"] = [
-        "A ciência é fascinante! Ela nos ajuda a entender o mundo ao nosso redor.",
+        "A ciência é fascinante! Ela nos ajuda a entender o mundo ao seu redor.",
         "Posso falar sobre física, química, biologia e muito mais!"
     ]
 
@@ -304,7 +325,7 @@ def get_weather_info(city_name=None):
         "units": "metric",  # Para obter temperatura em Celsius
         "lang": "pt_br"     # Para obter descrição em português
     }
-    
+
     try:
         response = requests.get(OPENWEATHER_BASE_URL, params=params)
         response.raise_for_status()  # Levanta um erro para status HTTP ruins (4xx ou 5xx)
@@ -331,37 +352,174 @@ def get_weather_info(city_name=None):
     except KeyError:
         return f"Não consegui encontrar informações climáticas detalhadas para '{city_name}'. Tente novamente mais tarde."
 
+# --- FUNÇÃO PARA OBTER NOTÍCIAS DE ENTRETENIMENTO (NEWSAPI) ---
+def get_entertainment_news(topic=None):
+    default_keywords = "games OR filmes OR series OR musica OR celebridades OR cultura pop"
+    query = topic if topic else default_keywords
+
+    params = {
+        "apiKey": NEWSAPI_API_KEY,
+        "category": "entertainment",
+        "language": "pt",
+        "q": query,
+        "pageSize": 3
+    }
+
+    try:
+        response = requests.get(NEWSAPI_BASE_URL, params=params)
+        response.raise_for_status()
+        news_data = response.json()
+
+        articles = news_data.get("articles")
+
+        if articles:
+            news_list = []
+            for i, article in enumerate(articles):
+                title = article.get("title", "Título indisponível")
+                source = article.get("source", {}).get("name", "Fonte desconhecida")
+                url = article.get("url", "#")
+                description = article.get("description", "").split('.')[0] + "..." if article.get("description") else ""
+
+                news_list.append(f"{i+1}. {title} ({source}). {description} Saiba mais: {url}")
+
+            if topic:
+                return f"Aqui estão algumas notícias sobre {topic} para você:\n" + "\n".join(news_list)
+            else:
+                return "Aqui estão as principais notícias de entretenimento:\n" + "\n".join(news_list)
+        else:
+            if topic:
+                return f"Não consegui encontrar notícias recentes sobre '{topic}' no momento."
+            else:
+                return "Não consegui encontrar notícias de entretenimento recentes no momento."
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao conectar com a API da NewsAPI: {e}")
+        return "Desculpe, estou com problemas para acessar as notícias no momento."
+    except KeyError:
+        return "Desculpe, não consegui processar as informações de notícias. Tente novamente mais tarde."
+
+# --- FUNÇÃO PARA PESQUISAR NA WEB (GOOGLE CUSTOM SEARCH) ---
+def search_web(query):
+    if not GOOGLE_SEARCH_API_KEY or not GOOGLE_CSE_ID:
+        return "Desculpe, a funcionalidade de pesquisa na web não está configurada corretamente."
+
+    params = {
+        "key": GOOGLE_SEARCH_API_KEY,
+        "cx": GOOGLE_CSE_ID,
+        "q": query,
+        "num": 3 # Número de resultados que você quer (máx 10 por requisição)
+    }
+
+    try:
+        response = requests.get(GOOGLE_SEARCH_BASE_URL, params=params)
+        response.raise_for_status() # Levanta um erro para status HTTP ruins
+        search_results = response.json()
+
+        items = search_results.get("items")
+        if items:
+            # Tenta encontrar a informação mais relevante
+            # Para "GTA VI", procurar por data de lançamento em snippets é um bom começo
+            
+            for item in items:
+                title = item.get("title")
+                snippet = item.get("snippet")
+                link = item.get("link")
+
+                # Lógica simplificada: se "lançamento" ou "data" estiver no snippet
+                # e o snippet não for muito curto, e tiver um ano, pode ser útil.
+                match_ano = re.search(r'\b(20[2-3][0-9])\b', snippet) # Procura por anos como 202X
+                match_mes_ano = re.search(r'(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(20[2-3][0-9])', snippet, re.IGNORECASE)
+                
+                # Prioriza a data completa (mês e ano), depois só o ano
+                if ("lançamento" in snippet.lower() or "data" in snippet.lower() or "release" in snippet.lower()):
+                    if match_mes_ano:
+                        return f"Pelo que encontrei, o {title.split(' - ')[0]} tem previsão de lançamento para {match_mes_ano.group(0)}. Mais detalhes: {link}"
+                    elif match_ano:
+                        return f"Pelo que encontrei, o {title.split(' - ')[0]} tem previsão de lançamento para {match_ano.group(0)}. Mais detalhes: {link}"
+            
+            # Se não encontrou uma data específica, retorna o primeiro snippet relevante
+            first_item = items[0]
+            return f"Não encontrei uma resposta exata, mas achei isto: '{first_item.get('snippet')}' (Fonte: {first_item.get('title')}). Veja mais: {first_item.get('link')}"
+
+        else:
+            return "Não encontrei resultados para a sua pesquisa na web no momento."
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao conectar com a API do Google Search: {e}")
+        return "Desculpe, estou com problemas para pesquisar na web agora. Pode ser um erro na sua chave ou no ID do CSE, ou o limite de requisições foi atingido."
+    except Exception as e:
+        print(f"Erro inesperado na pesquisa web: {e}")
+        return "Desculpe, houve um erro ao processar sua pesquisa na web."
+
+
 # Função para obter a resposta da IA
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
 
     # --- Lógica para o Clima ---
-    # Verifica se a mensagem do usuário indica intenção de clima
     if "clima" in user_message_normalized or "previsao do tempo" in user_message_normalized:
         city = None
-        # Tenta extrair o nome da cidade da mensagem do usuário (ex: "clima em São Paulo")
-        # Esta é uma detecção simples e pode ser aprimorada
         if "em " in user_message_normalized:
             parts = user_message_normalized.split("em ")
             if len(parts) > 1:
-                city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0] # Pega o que vem depois de "em"
+                city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
         elif "para " in user_message_normalized:
             parts = user_message_normalized.split("para ")
             if len(parts) > 1:
                 city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
-
         return get_weather_info(city)
 
-    # --- Busca em respostas rápidas
+    # --- Lógica para Notícias de Entretenimento ---
+    news_keywords = ["noticias", "notícias", "ultimas noticias", "ultimas notícias", "novidades"]
+    entertainment_topics = ["filmes", "series", "séries", "jogos", "games", "musica", "música", "celebridades", "cultura pop"]
+
+    is_news_query = any(keyword in user_message_normalized for keyword in news_keywords)
+
+    if is_news_query:
+        topic = None
+        for et_topic in entertainment_topics:
+            if et_topic in user_message_normalized:
+                topic = et_topic
+                break # Encontrou um tópico específico, sai do loop
+        return get_entertainment_news(topic)
+
+    # --- Lógica para Pesquisa na Web (Google Custom Search) ---
+    # Defina aqui quais tipos de perguntas devem acionar a busca na web.
+    # A ordem importa: se uma pergunta pode ser respondida por um diálogo OU pela busca na web,
+    # a que aparecer primeiro aqui será executada.
+    search_triggers = [
+        "qual ", "quando ", "quem é ", "o que é ", "onde é ",
+        "que ano lança ", "data de lançamento ", "me fale sobre " # Cuidado com "me fale sobre", pode sobrepor diálogos locais
+    ]
+
+    for trigger in search_triggers:
+        if user_message_normalized.startswith(trigger):
+            query_for_search = user_message
+            if trigger.endswith(" "): # Remove o gatilho da frente da query
+                 query_for_search = user_message[len(trigger):].strip()
+            
+            # Exceção para "me fale sobre": só pesquisa se não for um tópico que já tem diálogo fixo
+            if trigger == "me fale sobre ":
+                known_topics = ["tecnologia", "ia", "machine learning", "musica", "arte", "esportes", "jesus", "deus", "politica", "economia", "ciencia", "historia do brasil"]
+                if any(k in user_message_normalized for k in known_topics):
+                    # Se for um tópico conhecido, deixa a lógica passar para os diálogos temáticos
+                    pass 
+                else:
+                    return search_web(query_for_search)
+            else:
+                return search_web(query_for_search)
+
+
+    # --- Busca em respostas rápidas (se a pesquisa na web não foi acionada)
     for key in responses:
         if key in user_message_normalized:
             return random.choice(responses[key])
-            
-    # --- Busca em diálogos temáticos
+
+    # --- Busca em diálogos temáticos (se a pesquisa na web não foi acionada)
     for tema, lista in dialogues.items():
         if tema.lower() in user_message_normalized:
             return random.choice(lista)
-            
+
     return "Desculpe, não entendi. Pode repetir?"
 
 @app.route("/chat", methods=["POST"])
