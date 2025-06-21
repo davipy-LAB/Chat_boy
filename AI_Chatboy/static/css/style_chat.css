@@ -1,10 +1,28 @@
+/* Definições para o elemento raiz HTML e o Body */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%; /* Garante que o html e body ocupem no mínimo 100% da viewport */
+    background-color: #0d1117; /* Define o fundo preto para todo o documento */
+    /* Aplique o background animado ao HTML para garantir que ele se estenda por todo o scroll */
+    background-size: 400% 400%; /* Mantém o tamanho para a animação */
+    animation: gradientMove 15s ease infinite; /* Aplica a animação ao fundo */
+    filter: contrast(120%) brightness(100%); /* Mantém o filtro de cor */
+    overflow-x: hidden; /* Evita rolagem horizontal indesejada */
+}
+
+/* Estilos para o tsparticles */
 #tsparticles {
-  position: fixed;
+  /* Mudança CRÍTICA: de fixed para absolute */
+  position: absolute; /* Agora se posiciona em relação ao primeiro pai posicionado (o body) */
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  z-index: -1; /* Essencial: coloca o tsparticles no fundo */
+  /* Garante que cubra no mínimo a altura da tela, e se estenda com o conteúdo */
+  min-height: 100vh; /* Garante que ele cubra no mínimo a viewport */
+  height: auto; /* Permite que ele se expanda se o conteúdo do body for maior que a viewport */
+  z-index: -1; /* Essencial: coloca o tsparticles no fundo, abaixo de todo o resto */
+  /* Remove as propriedades de background e animação daqui, elas foram movidas para html/body */
 }
 
 @keyframes gradientMove {
@@ -14,21 +32,19 @@
 }
 
 body {
-    /* Mantenha o filter e animation se quiser que afetem o fundo das partículas */
-    background-size: 400% 400%;
-    animation: gradientMove 15s ease infinite;
-    filter: contrast(120%) brightness(100%);
+    /* As propriedades de background e animação foram movidas para html, body acima */
+    /* background-size: 400% 400%; */
+    /* animation: gradientMove 15s ease infinite; */
+    /* filter: contrast(120%) brightness(100%); */
+    /* background-color: #0d1117; / / Já definido no html,body */
 
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden; /* Importante para evitar rolagem horizontal na transição da sidebar */
+    /* overflow-x: hidden; / / Já definido no html,body */
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: 100vh; /* Ainda para garantir que o chat fique centralizado na tela inicial */
     color: #fff;
-    /* Ajuste o overflow-y no JS para impedir rolagem vertical quando o menu estiver aberto */
-    /* overflow-y: hidden; (NÃO COLOQUE AQUI, CONTROLE PELO JS) */
+    /* position: relative; /* Já está lá, mas é importante para o #tsparticles absolute */
 }
 
 .text {
@@ -38,15 +54,16 @@ body {
 .sidebar {
     position: fixed;
     top: 0;
-    left: 0; /* Posição inicial (desktop) */
+    left: 0;
+    transform: translateX(0);
     width: 250px;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.1); /* Fundo translúcido */
-    backdrop-filter: blur(5px); /* Efeito de desfoque */
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
     padding: 20px;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-    transition: left 0.3s ease-in-out, background 0.3s ease-in-out; /* Transição para left e background */
-    z-index: 10; /* Acima do tsparticles e do chat/container */
+    transition: transform 0.3s ease-in-out, background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    z-index: 10;
 }
 
 .sidebar:hover {
@@ -102,21 +119,21 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100vh; /* Manter 100vh se o chat não for rolável verticalmente */
     position: relative;
-    z-index: 5; /* Acima do tsparticles */
+    z-index: 5;
 }
 
 .chat {
     width: 400px;
-    height: 600px; /* Altura padrão para desktop */
-    background-color: #ffffff; /* Fundo padrão do chat */
+    height: 600px;
+    background-color: #ffffff;
     border-radius: 10px;
-    overflow: hidden; /* Importante para que o conteúdo não vaze */
+    overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     z-index: 6;
-    display: flex; /* Adicionado para organizar header, body e input */
-    flex-direction: column; /* Coloca os filhos em coluna */
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-header {
@@ -127,14 +144,13 @@ body {
     font-size: 20px;
     font-weight: bold;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-    flex-shrink: 0; /* Impede que o cabeçalho encolha */
+    flex-shrink: 0;
 }
 
 .chat-body {
     padding: 10px;
     overflow-y: scroll;
-    flex-grow: 1; /* Faz o corpo do chat ocupar o espaço restante */
-    /* height: 400px; <-- Removido para desktop/default, flex-grow gerencia */
+    flex-grow: 1;
 }
 
 @keyframes fadeIn {
@@ -193,7 +209,7 @@ body {
     align-items: center;
     background-color: #f2f2f2;
     border-top: 1px solid #ccc;
-    flex-shrink: 0; /* Impede que o input encolha */
+    flex-shrink: 0;
 }
 
 .chat-input input {
@@ -241,93 +257,90 @@ body {
     font: 1em sans-serif;
 }
 
-/* --- NOVO CSS PARA O OVERLAY --- */
+/* --- ESTILOS DO OVERLAY --- */
 .overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
-    z-index: 9; /* Acima do chat, mas abaixo da sidebar */
-    display: none; /* Escondido por padrão */
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9;
+    display: none;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
 
 .overlay.active {
-    display: block; /* Torna o overlay visível */
+    display: block;
     opacity: 1;
 }
 
-/* Sua seção de media query para telas menores (tablets e celulares) */
+/* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
+
+/* Telas menores (tablets e celulares grandes) - até 768px */
 @media (max-width: 768px) {
-    /* Esconde a sidebar por padrão em telas pequenas */
     .sidebar {
-        left: -250px; /* Usa a largura original para esconder */
-        width: 250px; /* Garante a largura padrão aqui (se não for alterada por outras media queries) */
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
-        transition: left 0.3s ease-in-out, background 0.3s ease-in-out;
+        transform: translateX(-100%);
+        width: 250px;
+        box-shadow: none;
     }
 
-    /* Quando a sidebar estiver "aberta" (classe adicionada via JS) */
     .sidebar.active {
-        left: 0; /* Move a sidebar para a posição visível */
+        transform: translateX(0);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
     }
 
-    /* Remova qualquer "menu-button" ou ícone de hamburger que possa estar aparecendo */
     .menu-button {
         display: none !important;
     }
 
-    /* Ajustes para o CONTAINER principal em mobile */
     .container {
-        width: 100%; /* Ocupa a largura total */
-        height: 100vh; /* Ocupa a altura total da viewport */
+        width: 100%;
+        height: 100vh;
     }
 
-    /* Ajustes para o CHAT em telas entre 481px e 768px (o que cobriria o S24 FE na prática) */
     .chat {
-        width: 90%; /* Ajuste a largura do chat */
-        max-width: 500px; /* Limita a largura máxima para que não fique gigante em tablets */
-        height: 90vh; /* Aumenta a altura do chat para telas maiores */
-        border-radius: 10px; /* Mantém bordas arredondadas */
+        width: 90%;
+        max-width: 500px;
+        height: 90vh;
+        border-radius: 10px;
     }
 
     .chat-body {
-        height: calc(90vh - 120px); /* Ajusta a altura do corpo do chat, deixando espaço para header e input */
+        height: calc(90vh - 120px);
     }
 
     .chat-input {
-        flex-direction: column; /* Empilha input e botão */
-        align-items: stretch; /* Estica para a largura total */
-        padding: 8px; /* Ajusta o padding para ser mais compacto */
+        flex-direction: column;
+        align-items: stretch;
+        padding: 8px;
     }
 
     .chat-input input {
-        margin-bottom: 8px; /* Mais espaço entre input e botão */
-        font-size: 1rem; /* Tamanho de fonte padrão para mobile */
-        padding: 8px; /* Aumenta o padding do input */
+        margin-bottom: 8px;
+        font-size: 1rem;
+        padding: 8px;
     }
 
     .chat-input button {
-        width: 100%; /* Botão ocupa toda a largura */
-        margin-left: 0; /* Remove margem lateral */
+        width: 100%;
+        margin-left: 0;
         font-size: 1rem;
-        padding: 8px; /* Aumenta o padding do botão */
+        padding: 8px;
     }
 }
 
-/* Regras para telas MUITO pequenas (celulares pequenos), como 480px e abaixo */
+/* Telas MUITO pequenas (celulares pequenos) - até 480px */
 @media (max-width: 480px) {
     .chat {
-        width: 98%; /* Quase 100% para celular muito pequeno */
-        border-radius: 10px; /* Mantenha as bordas arredondadas aqui */
-        height: 95vh; /* Pode aumentar a altura para ocupar quase toda a tela */
+        width: 98%;
+        border-radius: 10px;
+        height: 95vh;
     }
 
     .chat-body {
-        height: calc(95vh - 120px); /* Ajuste a altura do corpo do chat */
+        height: calc(95vh - 120px);
     }
 
     .chat-message {
@@ -336,24 +349,27 @@ body {
     }
 
     .sidebar {
-        width: 180px; /* Sidebar menor */
+        width: 180px;
+        transform: translateX(-100%);
         padding: 10px;
-        left: -180px; /* Esconde a sidebar para a esquerda com base na sua nova largura */
+        box-shadow: none;
     }
-    /* As regras para .chat-input, input, button já vêm da media query de 768px e são adequadas aqui */
+
+    .sidebar.active {
+        transform: translateX(0);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
+    }
 }
 
-/* Ajustes para telas menores que 360px (smartphones pequenos) */
+/* Telas menores que 360px (smartphones muito pequenos) */
 @media (max-width: 360px) {
     .chat {
         width: 100%;
         height: 100vh;
-        border-radius: 0; /* Remove bordas para ocupar a tela inteira */
+        border-radius: 0;
     }
 
     .chat-header, .chat-message, .chat-input input, .chat-input button {
         font-size: 14px;
     }
-
-    /* As regras de .chat-input, input, button já vêm da media query de 768px ou 480px e são adequadas */
 }
