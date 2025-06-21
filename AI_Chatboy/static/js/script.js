@@ -70,3 +70,72 @@ userInput.addEventListener("keypress", (event) => {
 sendButton.addEventListener("click", () => {
     sendMessage();
 });
+
+// Referências para os novos elementos
+const sidebar = document.querySelector('.sidebar');
+const overlay = document.getElementById('overlay');
+
+let touchStartX = 0;
+let touchEndX = 0;
+const minSwipeDistance = 50; // Distância mínima para considerar um swipe
+
+// --- Funções para controlar a sidebar ---
+function openSidebar() {
+    // Abre a sidebar APENAS se estiver em tela pequena
+    if (window.innerWidth <= 768) {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Impede rolagem do body quando sidebar aberta
+    }
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+    document.body.style.overflow = ''; // Permite rolagem novamente
+}
+
+// --- Event Listeners para toque/swipe ---
+
+// Detecta o início do toque
+document.addEventListener('touchstart', (e) => {
+    // Evita que o swipe vertical também acione o menu acidentalmente
+    // Captura a posição X inicial do toque
+    touchStartX = e.changedTouches[0].screenX;
+}, false);
+
+// Detecta o fim do toque
+document.addEventListener('touchend', (e) => {
+    // Evita que o swipe vertical também acione o menu acidentalmente
+    // Captura a posição X final do toque
+    touchEndX = e.changedTouches[0].screenX;
+    handleGesture();
+}, false);
+
+function handleGesture() {
+    // Só processa gestos em telas pequenas
+    if (window.innerWidth <= 768) {
+        const swipeDistance = touchEndX - touchStartX;
+
+        // Se a sidebar está fechada E o swipe foi para a direita (positivo) e longo o suficiente
+        if (swipeDistance > minSwipeDistance && !sidebar.classList.contains('active')) {
+            openSidebar();
+        }
+        // Se a sidebar está aberta E o swipe foi para a esquerda (negativo) e longo o suficiente
+        else if (swipeDistance < -minSwipeDistance && sidebar.classList.contains('active')) {
+            closeSidebar();
+        }
+    }
+}
+
+// --- Event Listener para fechar sidebar ao clicar no overlay ---
+overlay.addEventListener('click', () => {
+    closeSidebar();
+});
+
+// --- Opcional: Fechar sidebar ao redimensionar a tela (se mudar de mobile para desktop) ---
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+        closeSidebar();
+    }
+});
