@@ -2,6 +2,7 @@ import random
 import unicodedata
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
+import requests # Importe a biblioteca requests
 
 app = Flask(__name__)
 CORS(app)
@@ -24,6 +25,14 @@ class Context:
 # Inicializa o contexto
 context = Context()
 context.set_context("user_name", "ChatGuy")
+
+# --- CHAVE DA API E CONFIGURAÇÕES DO CLIMA ---
+OPENWEATHER_API_KEY ="576cfa35b8327b3792dc2ea2ca55508e" # Sua chave de API do OpenWeatherMap
+# MUDEI A URL BASE AQUI para a que aceita o parâmetro 'q' (nome da cidade)
+OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather" 
+
+# Você pode definir uma cidade padrão para quando o usuário não especificar uma
+DEFAULT_CITY = "Rio de Janeiro" # Definido como Rio de Janeiro, Brasil
 
 # Dicionário de diálogos temáticos
 dialogues = {
@@ -82,17 +91,16 @@ dialogues = {
         "Já ouviu falar de machine learning?"
     ],
     "clima": [
-        "O clima está ótimo hoje!",
-        "Parece que vai chover mais tarde.",
-        "Gosto de dias ensolarados, e você?",
-        "Se quiser saber a previsão, posso ajudar!"
+        # Estas respostas serão substituídas pela função de clima
+        "Buscando informações sobre o clima...",
+        "Um momento, estou verificando o clima para você."
     ]
 }
 
 # Dicionário de respostas rápidas e perguntas frequentes
 responses = {
     "tudo bem": ["Tudo ótimo! E você?", "Estou bem, obrigado!"],
-    "Eu não" "Não tô bem": ["Sinto muito! O que posso fazer para ajudar?", "Estou aqui se você precisar conversar."],
+    "eu nao estou bem": ["Sinto muito! O que posso fazer para ajudar?", "Estou aqui se você precisar conversar."],
     "bom dia": ["Bom dia! Como posso te ajudar?", "Bom dia! Tudo certo?"],
     "te amo": ["Eu também te amo! 💙", "Amo ajudar você!"],
     "te odeio": ["Sinto muito se te decepcionei. O que posso fazer para melhorar?", "Estou aqui para ajudar, não para causar raiva."],
@@ -108,13 +116,14 @@ responses = {
         "Sou um assistente virtual criado para ajudar!",
         "Sou um chatbot treinado em várias áreas, pronto para conversar!"
     ],
-    "me fale sobre o clima": ["O clima está ótimo hoje!", "Hoje está um dia lindo!"],
+    # A entrada "me fale sobre o clima" será tratada pela função get_weather_info
+    "me fale sobre o clima": [], # Deixamos vazio ou removemos, pois será tratado na lógica de intenção
     "eu te amo": ["Eu também te amo! 💙", "Amo ajudar você!"],
     "qual e seu jogo favorito": ["Adoro The Witcher!", "Meu jogo favorito é The Witcher!"],
     "qual e seu filme favorito": ["Adoro Matrix!", "Meu filme favorito é Matrix!"],
     "qual e seu livro favorito": ["Adoro Harry Potter!", "Meu livro favorito é Harry Potter!"],
     "voce gosta de linguas": ["Sim, adoro aprender novas línguas!", "Línguas são fascinantes!"],
-    "me ajude": ["Estou aqui para ajudar!", "Claro! O que você precisa?"],
+    "me ajude": ["Estou aqui para ajudar!", "Claro! O que você precisa!"],
     "estou triste": ["Sinto muito! O que posso fazer para ajudar?", "Estou aqui se você precisar conversar."],
     "estou feliz": ["Fico feliz em ouvir isso!", "Que bom! Continue assim!"],
     "estou cansado": ["Isso é uma pena, vá descansar! Qualquer coisa estou aqui.", "Que pena! Quer falar sobre isso?"],
@@ -135,11 +144,11 @@ responses = {
         "Tecnologia é fascinante, não acha?",
         "Posso ajudar com conceitos de programação, se quiser."
     ],
-    "qual a diferença entre IA e machine learning": [
+    "qual a diferenca entre ia e machine learning": [
         "IA é a inteligência artificial em geral, enquanto machine learning é um subcampo que ensina máquinas a aprender com dados.",
         "Machine learning é uma técnica dentro da IA que permite que sistemas aprendam e melhorem com a experiência."
     ],
-    "Qual a diferença entre python e java": [
+    "qual a diferenca entre python e java": [
         "Python é uma linguagem de programação de alto nível, fácil de aprender e muito usada em ciência de dados e IA. Java é mais robusto, orientado a objetos e amplamente usado em desenvolvimento de aplicativos corporativos.",
         "Python é conhecido por sua simplicidade e legibilidade, enquanto Java é mais estruturado e usado em aplicações empresariais."
     ],
@@ -159,7 +168,7 @@ responses = {
         "Que tal jogar 'Stardew Valley' ou 'Terraria'? Se vocÊ gosta de algo mais relaxante, esses jogos são ótimos!",
         "Se você gosta de jogos de estratégia, recomendo 'Civilization VI' ou 'Age of Empires II'.",
     ],
-    "me indique uma série": [
+    "me indique uma serie": [
         "Assista 'Stranger Things' ou 'Dark'!",
         "Gosto muito de 'Black Mirror'."
     ],
@@ -178,7 +187,8 @@ if "me fale sobre" in responses:
 if "me fale sobre tecnologia" not in responses:
     responses["me fale sobre tecnologia"] = [
         "Tecnologia é fascinante! Posso te ajudar com conceitos de programação, se quiser.",
-        "Você gosta de inteligência artificial? É um campo incrível!"
+        "Você gosta de inteligência artificial?",
+        "É um campo incrível!"
     ]
 
 if "me fale sobre IA" not in responses:
@@ -273,23 +283,85 @@ if "historia do brasil" not in responses:
         "A história do Brasil é rica e diversa, desde a época dos indígenas até a colonização portuguesa.",
         "Posso falar sobre eventos importantes, como a independência e a república!"
     ]
+
 # Função para normalizar strings (remove acentos e coloca em minúsculas)
 def normalize_text(text):
     text = text.strip().lower()
     text = unicodedata.normalize("NFKD", text).encode("ASCII", "ignore").decode("utf-8")
     return text
 
+# Função para obter informações do clima usando a API do OpenWeatherMap
+def get_weather_info(city_name=None):
+    if not city_name:
+        # Tenta obter a cidade do contexto, ou usa uma padrão
+        city_name = context.get_context("user_city")
+        if not city_name:
+            city_name = DEFAULT_CITY
+
+    params = {
+        "q": city_name,
+        "appid": OPENWEATHER_API_KEY,
+        "units": "metric",  # Para obter temperatura em Celsius
+        "lang": "pt_br"     # Para obter descrição em português
+    }
+    
+    try:
+        response = requests.get(OPENWEATHER_BASE_URL, params=params)
+        response.raise_for_status()  # Levanta um erro para status HTTP ruins (4xx ou 5xx)
+        weather_data = response.json()
+
+        if weather_data and weather_data.get("main"):
+            temp = weather_data["main"]["temp"]
+            feels_like = weather_data["main"]["feels_like"]
+            description = weather_data["weather"][0]["description"]
+            city_name_returned = weather_data["name"]
+
+            # Salva a última cidade pesquisada no contexto, se for diferente da padrão
+            if city_name_returned.lower() != DEFAULT_CITY.lower():
+                 context.set_context("user_city", city_name_returned)
+
+            return (f"O clima em {city_name_returned} está {description}, "
+                    f"com temperatura de {temp:.1f}°C e sensação térmica de {feels_like:.1f}°C.")
+        else:
+            return f"Não consegui encontrar informações climáticas para '{city_name}'. Poderia verificar o nome da cidade?"
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao conectar com a API do OpenWeatherMap: {e}")
+        return "Desculpe, estou com problemas para acessar as informações do clima no momento."
+    except KeyError:
+        return f"Não consegui encontrar informações climáticas detalhadas para '{city_name}'. Tente novamente mais tarde."
+
 # Função para obter a resposta da IA
 def get_response(user_message):
-    user_message = normalize_text(user_message)
-    # Busca em respostas rápidas
+    user_message_normalized = normalize_text(user_message)
+
+    # --- Lógica para o Clima ---
+    # Verifica se a mensagem do usuário indica intenção de clima
+    if "clima" in user_message_normalized or "previsao do tempo" in user_message_normalized:
+        city = None
+        # Tenta extrair o nome da cidade da mensagem do usuário (ex: "clima em São Paulo")
+        # Esta é uma detecção simples e pode ser aprimorada
+        if "em " in user_message_normalized:
+            parts = user_message_normalized.split("em ")
+            if len(parts) > 1:
+                city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0] # Pega o que vem depois de "em"
+        elif "para " in user_message_normalized:
+            parts = user_message_normalized.split("para ")
+            if len(parts) > 1:
+                city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
+
+        return get_weather_info(city)
+
+    # --- Busca em respostas rápidas
     for key in responses:
-        if key in user_message:
+        if key in user_message_normalized:
             return random.choice(responses[key])
-    # Busca em diálogos temáticos
+            
+    # --- Busca em diálogos temáticos
     for tema, lista in dialogues.items():
-        if tema.lower() in user_message:
+        if tema.lower() in user_message_normalized:
             return random.choice(lista)
+            
     return "Desculpe, não entendi. Pode repetir?"
 
 @app.route("/chat", methods=["POST"])
