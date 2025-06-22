@@ -189,10 +189,99 @@ responses = {
     "noticias de musica": []
 }
 
+# Expansões dos dicionários - mantidas separadas como no seu código original
 if "historia do brasil" not in responses:
     responses["historia do brasil"] = [
         "A história do Brasil é rica e diversa, desde a época dos indígenas até a colonização portuguesa.",
         "Posso falar sobre eventos importantes, como a independência e a república!"
+    ]
+if "me fale sobre" in responses:
+    responses["me fale sobre"].extend([
+        "Você gostaria de saber mais sobre algum assunto específico?",
+        "Posso falar sobre tecnologia, ciência, cultura pop e muito mais!"
+    ])
+else:
+    responses["me fale sobre"] = [
+        "Você gostaria de saber mais sobre algum assunto específico?",
+        "Posso falar sobre tecnologia, ciência, cultura pop e muito mais!"
+    ]
+if "me fale sobre tecnologia" not in responses:
+    responses["me fale sobre tecnologia"] = [
+        "Tecnologia é fascinante! Posso te ajudar com conceitos de programação, se quiser.",
+        "Você gosta de inteligência artificial?",
+        "É um campo incrível!"
+    ]
+if "me fale sobre IA" not in responses:
+    responses["me fale sobre IA"] = [
+        "Inteligência Artificial é um campo que estuda como criar máquinas que podem simular a inteligência humana.",
+        "A IA está presente em muitos aspectos do nosso dia a dia, desde assistentes virtuais até sistemas de recomendação."
+    ]
+if "me fale sobre machine learning" not in responses:
+    responses["me fale sobre machine learning"] = [
+        "Machine Learning é uma técnica dentro da IA que permite que sistemas aprendam e melhorem com a experiência.",
+        "É usado em muitas aplicações, como reconhecimento de voz, visão computacional e sistemas de recomendação."
+    ]
+if "sobre mim" not in responses:
+    responses["sobre voce"] = [
+        "Sou um assistente virtual criado para ajudar com informações e entretenimento.",
+        "Meu objetivo é tornar sua experiência mais agradável e informativa!"
+    ]
+if "sobre musica" not in responses:
+    responses["sobre musica"] = [
+        "Música é uma forma incrível de expressão! Você gosta de algum gênero específico?",
+        "Posso recomendar algumas playlists ou artistas, se quiser!"
+    ]
+if "sobre arte" not in responses:
+    responses["sobre arte"] = [
+        "A arte é uma forma maravilhosa de expressão humana! Você tem um artista favorito?",
+        "Posso falar sobre movimentos artísticos, se você quiser!"
+    ]
+if "artista favorito" not in responses:
+    responses["artista favorito"] = [
+        "Admiro muitos artistas, mas não tenho um favorito específico. Se eu fosse humano, talvez gostasse dos mesmos que ti hahaha",
+        "A arte é subjetiva, e cada pessoa tem seus próprios gostos!"
+    ]
+if "sobre esportes" not in responses:
+    responses["sobre esportes"] = [
+        "Esportes são uma ótima maneira de se manter ativo e saudável! Você pratica algum?",
+        "Posso falar sobre esportes populares, como futebol, basquete ou vôlei!"
+    ]
+if "jogo do flamengo" not in responses:
+    responses["jogo do flamengo"] = [
+        "O Flamengo tem uma rica história e muitos títulos. Qual é o seu jogador favorito, inclusive, O jogo do Flamengo X Chealse ontem foi lendário!"
+    ]
+if "sobre jesus" not in responses:
+    responses["sobre jesus"] = [
+        "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
+    ]
+if "de jesus" not in responses:
+    responses["de jesus"] = [
+        "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
+    ]
+if "sobre deus" not in responses:
+    responses["sobre deus"] = [
+        "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
+        "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
+    ]
+if "de deus" not in responses:
+    responses["de deus"] = [
+        "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
+        "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
+    ]
+if "politica" not in responses:
+    responses["politica"] = [
+        "Política é um assunto complexo e muitas vezes polêmico. É importante discutir com respeito e ouvir diferentes opiniões.",
+        "Você tem interesse em política? Posso falar sobre sistemas políticos, eleições e mais!"
+    ]
+if "economia" not in responses:
+    responses["economia"] = [
+        "A economia estuda como as sociedades usam recursos escassos para produzir bens e serviços.",
+        "Posso explicar conceitos econômicos, como oferta e demanda, se você quiser!"
+    ]
+if "sobre ciencia" not in responses:
+    responses["sobre ciencia"] = [
+        "A ciência é fascinante! Ela nos ajuda a entender o mundo ao seu redor.",
+        "Posso falar sobre física, química, biologia e muito mais!"
     ]
 
 # --- Funções auxiliares ---
@@ -304,21 +393,68 @@ def search_web(query):
 
         items = search_results.get("items")
         if items:
+            best_match_info = None
+            earliest_future_date = None
+
+            current_year = datetime.now().year
+            
             for item in items:
-                title = item.get("title")
-                snippet = item.get("snippet")
-                link = item.get("link")
+                title = item.get("title", "")
+                snippet = item.get("snippet", "")
+                link = item.get("link", "")
+
+                match_mes_ano = re.search(r'(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(\d{4})', snippet, re.IGNORECASE)
                 match_ano = re.search(r'\b(20[2-3][0-9])\b', snippet)
-                match_mes_ano = re.search(r'(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(20[2-3][0-9])', snippet, re.IGNORECASE)
-                if ("lançamento" in snippet.lower() or "data" in snippet.lower() or "release" in snippet.lower()):
-                    if match_mes_ano:
-                        return f"Pelo que encontrei, o {title.split(' - ')[0]} tem previsão de lançamento para {match_mes_ano.group(0)}. Mais detalhes: {link}"
-                    elif match_ano:
-                        return f"Pelo que encontrei, o {title.split(' - ')[0]} tem previsão de lançamento para {match_ano.group(0)}. Mais detalhes: {link}"
-            first_item = items[0]
-            return f"Não encontrei uma resposta exata, mas achei isto: '{first_item.get('snippet')}' (Fonte: {first_item.get('title')}). Veja mais: {first_item.get('link')}"
-        else:
-            return "Não encontrei resultados para a sua pesquisa na web no momento."
+
+                found_date_str = None
+                found_year = None
+                
+                if match_mes_ano:
+                    found_date_str = match_mes_ano.group(0)
+                    found_year = int(match_mes_ano.group(1))
+                elif match_ano:
+                    found_date_str = match_ano.group(0)
+                    found_year = int(match_ano.group(1))
+
+                if found_year:
+                    if found_year >= current_year:
+                        try:
+                            if match_mes_ano:
+                                mes_nome = match_mes_ano.group(0).split(' ')[0]
+                                mes_num = {
+                                    'janeiro':1, 'fevereiro':2, 'março':3, 'abril':4, 'maio':5, 'junho':6,
+                                    'julho':7, 'agosto':8, 'setembro':9, 'outubro':10, 'novembro':11, 'dezembro':12
+                                }.get(mes_nome.lower(), 1)
+                                current_parsed_date = datetime(found_year, mes_num, 1)
+                            else:
+                                current_parsed_date = datetime(found_year, 1, 1)
+
+                            if earliest_future_date is None or current_parsed_date < earliest_future_date:
+                                earliest_future_date = current_parsed_date
+                                best_match_info = {
+                                    "title": title,
+                                    "snippet": snippet,
+                                    "link": link,
+                                    "date_str": found_date_str,
+                                    "parsed_date": current_parsed_date
+                                }
+                        except Exception as e:
+                            print(f"Erro ao parsear data: {e} no snippet: {snippet}")
+                            pass
+            
+            if best_match_info:
+                clean_query_for_response = query.replace('que ano lança o ', '').replace('data de lançamento ', '').strip()
+                return (f"Pelo que encontrei, a previsão de lançamento para '{clean_query_for_response}' é em **{best_match_info['date_str']}**. "
+                        f"Mais detalhes: {best_match_info['link']}")
+            
+            if items:
+                first_relevant_snippet = items[0].get('snippet', '')
+                first_relevant_title = items[0].get('title', '')
+                first_relevant_link = items[0].get('link', '')
+                return (f"Não encontrei uma data de lançamento exata ou futura imediata, mas achei isto: "
+                        f"'{first_relevant_snippet}' (Fonte: {first_relevant_title}). Veja mais: {first_relevant_link}")
+            else:
+                return "Não encontrei resultados para a sua pesquisa na web no momento."
 
     except requests.exceptions.RequestException as e:
         print(f"Erro ao conectar com a API do Google Search: {e}")
@@ -327,8 +463,57 @@ def search_web(query):
         print(f"Erro inesperado na pesquisa web: {e}")
         return "Desculpe, houve um erro ao processar sua pesquisa na web."
 
+# --- FUNÇÕES DE INTERAÇÃO COM GOOGLE SHEETS ---
+
+def get_sheet_data(spreadsheet_name, worksheet_name):
+    """
+    Obtém todos os registros de uma aba específica de uma planilha.
+    Retorna uma lista de dicionários, onde as chaves são os cabeçalhos das colunas.
+    """
+    if not gs_client:
+        return {"error": "Cliente Google Sheets não inicializado."}
+
+    try:
+        spreadsheet = gs_client.open(spreadsheet_name)
+        worksheet = spreadsheet.worksheet(worksheet_name)
+        data = worksheet.get_all_records()
+        return data
+    except gspread.exceptions.SpreadsheetNotFound:
+        return {"error": f"Planilha '{spreadsheet_name}' não encontrada."}
+    except gspread.exceptions.WorksheetNotFound:
+        return {"error": f"Aba '{worksheet_name}' não encontrada na planilha '{spreadsheet_name}'."}
+    except Exception as e:
+        print(f"Erro ao obter dados da planilha: {e}")
+        return {"error": f"Erro inesperado ao obter dados da planilha: {e}"}
+
+def add_row_to_sheet(spreadsheet_name, worksheet_name, row_data):
+    """
+    Adiciona uma nova linha ao final de uma aba específica em uma planilha.
+    row_data deve ser uma lista (ex: ['Valor Coluna A', 'Valor Coluna B']).
+    """
+    if not gs_client:
+        return {"success": False, "message": "Cliente Google Sheets não inicializado."}
+
+    try:
+        spreadsheet = gs_client.open(spreadsheet_name)
+        worksheet = spreadsheet.worksheet(worksheet_name)
+        worksheet.append_row(row_data)
+        return {"success": True, "message": "Linha adicionada com sucesso!"}
+    except gspread.exceptions.SpreadsheetNotFound:
+        return {"success": False, "message": f"Erro: Planilha '{spreadsheet_name}' não encontrada."}
+    except gspread.exceptions.WorksheetNotFound:
+        return {"success": False, "message": f"Erro: Aba '{worksheet_name}' não encontrada na planilha '{spreadsheet_name}'."}
+    except Exception as e:
+        print(f"Erro ao adicionar linha à planilha: {e}")
+        return {"success": False, "message": f"Erro inesperado ao adicionar linha à planilha: {e}"}
+
+
+# Função para obter a resposta da IA
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
+    bot_response = "Desculpe, não entendi. Pode repetir?" # Resposta padrão caso nada seja ativado
+
+    # --- Lógica para o Clima ---
     if "clima" in user_message_normalized or "previsao do tempo" in user_message_normalized:
         city = None
         if "em " in user_message_normalized:
@@ -339,17 +524,24 @@ def get_response(user_message):
             parts = user_message_normalized.split("para ")
             if len(parts) > 1:
                 city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
-        return get_weather_info(city)
+        bot_response = get_weather_info(city)
+
+    # --- Lógica para Notícias de Entretenimento ---
     news_keywords = ["noticias", "notícias", "ultimas noticias", "ultimas notícias", "novidades"]
     entertainment_topics = ["filmes", "series", "séries", "jogos", "games", "musica", "música", "celebridades", "cultura pop"]
+
     is_news_query = any(keyword in user_message_normalized for keyword in news_keywords)
-    if is_news_query:
+
+    if is_news_query and bot_response == "Desculpe, não entendi. Pode repetir?": # Garante que não sobrescreva uma intenção já ativada
         topic = None
         for et_topic in entertainment_topics:
             if et_topic in user_message_normalized:
                 topic = et_topic
                 break
-        return get_entertainment_news(topic)
+        bot_response = get_entertainment_news(topic)
+
+
+    # --- Lógica para "me fale sobre" (PRIORIDADE ALTA, para tópicos conhecidos) ---
     if user_message_normalized.startswith("me fale sobre "):
         query_for_search = user_message[len("me fale sobre "):].strip()
         known_topics = [
@@ -358,13 +550,20 @@ def get_response(user_message):
             "voce"
         ]
         query_normalized_for_check = normalize_text(query_for_search)
+
         is_known_topic = False
         for k_topic in known_topics:
             if k_topic in query_normalized_for_check:
                 is_known_topic = True
                 break
+
         if not is_known_topic:
-            return search_web(query_for_search)
+            bot_response = search_web(query_for_search)
+        # Se for um tópico conhecido, o código continuará para as respostas fixas abaixo,
+        # ou será tratado se tiver sido a primeira intenção ativada (e.g. clima)
+
+
+    # --- Lógica para Outras Pesquisas na Web (Google Custom Search) ---
     search_triggers_web = [
         "quando vai ",
         "que ano lança ",
@@ -376,41 +575,74 @@ def get_response(user_message):
         "onde é "
     ]
     search_triggers_web.sort(key=len, reverse=True)
+
     for trigger in search_triggers_web:
-        if user_message_normalized.startswith(trigger):
+        if user_message_normalized.startswith(trigger) and bot_response == "Desculpe, não entendi. Pode repetir?": # Garante que não sobrescreva
             query_for_search = user_message[len(trigger):].strip()
             search_result = search_web(query_for_search)
+
             if trigger == "quando vai ":
-                return "Entendo sua questão, segundo meus dados, segue uma analise: " + search_result
+                bot_response = "Entendo sua questão, segundo meus dados, segue uma analise: " + search_result
             else:
-                return search_result
-    for key in responses:
-        if key in user_message_normalized:
-            return random.choice(responses[key])
-    for tema, lista in dialogues.items():
-        if tema.lower() in user_message_normalized:
-            return random.choice(lista)
-    return "Desculpe, não entendi. Pode repetir?"
+                bot_response = search_result
+            break # Importante para sair do loop uma vez que um gatilho é ativado
+
+
+    # --- Busca em respostas rápidas e diálogos temáticos (se nenhuma API ou FAQ foi ativada) ---
+    if bot_response == "Desculpe, não entendi. Pode repetir?": # Se ainda não encontrou resposta
+        for key in responses:
+            if key in user_message_normalized:
+                bot_response = random.choice(responses[key])
+                break # Sai do loop assim que encontra uma resposta
+
+    if bot_response == "Desculpe, não entendi. Pode repetir?": # Se ainda não encontrou resposta
+        for tema, lista in dialogues.items():
+            if tema.lower() in user_message_normalized:
+                bot_response = random.choice(lista)
+                break
+
+    # --- NOVO: Lógica para Salvar Interações no Google Sheets (Descomente para ativar) ---
+    if gs_client:
+        try:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Exemplo: descomente e substitua os nomes da planilha/aba
+            # print(add_row_to_sheet("NomeDaSuaPlanilhaDeLog", "Interacoes", [timestamp, user_message, bot_response]))
+        except Exception as e:
+            print(f"Erro ao logar interação na planilha: {e}")
+
+    return bot_response # Retorna a resposta final do bot
 
 # --- Google Sheets Auth ---
 def get_sheets_client():
     credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
     if credentials_json_str:
-        credentials_info = json.loads(credentials_json_str)
-        gc = gspread.service_account_from_dict(credentials_info)
-        print("Google Sheets: Autenticado via variável de ambiente.")
+        try:
+            credentials_info = json.loads(credentials_json_str)
+            gc = gspread.service_account_from_dict(credentials_info)
+            print("Google Sheets: Autenticado via variável de ambiente.")
+        except json.JSONDecodeError as e:
+            print(f"ERRO: Variável de ambiente GOOGLE_SHEETS_CREDENTIALS não é um JSON válido: {e}")
+            return None
+        except Exception as e:
+            print(f"ERRO ao autenticar o Google Sheets via variável de ambiente: {e}")
+            return None
     else:
         try:
+            # Nome do arquivo JSON da credencial. Confirme se é EXATAMENTE este nome.
             gc = gspread.service_account(filename='chatboy-463619-b295229e68c6.json')
-            print("Google Sheets: Autenticado via arquivo local 'service_account.json'.")
+            # Mensagem de print ajustada para refletir o nome do arquivo correto
+            print("Google Sheets: Autenticado via arquivo local 'chatboy-463619-b295229e68c6.json'.")
         except FileNotFoundError:
-            print("ERRO: O arquivo 'service_account.json' não foi encontrado.")
+            # Mensagem de erro ajustada para refletir o nome do arquivo correto
+            print("ERRO: O arquivo 'chatboy-463619-b295229e68c6.json' não foi encontrado. "
+                  "Verifique se o nome está correto e se ele está no diretório raiz.")
             return None
         except Exception as e:
             print(f"ERRO ao autenticar o Google Sheets via arquivo local: {e}")
             return None
     return gc
 
+# Inicializa o cliente do Google Sheets uma vez ao iniciar a aplicação
 gs_client = get_sheets_client()
 if not gs_client:
     print("AVISO: O cliente do Google Sheets não pôde ser inicializado. Funções relacionadas não funcionarão.")
@@ -426,7 +658,7 @@ def chat():
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Garante que a pasta 'uploads' exista
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -441,27 +673,42 @@ def upload_excel():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        
         try:
-            df = pd.read_excel(filepath)
+            file.save(filepath) # Salva o arquivo temporariamente
+            df = pd.read_excel(filepath) # Lê o arquivo Excel com pandas
         except Exception as e:
-            os.remove(filepath)
+            # Se ocorrer um erro na leitura ou salvamento, remove o arquivo e retorna erro
+            if os.path.exists(filepath):
+                os.remove(filepath)
             return jsonify({'error': f'Erro ao ler o arquivo Excel: {e}'}), 400
+        
         if not gs_client:
-            os.remove(filepath)
-            return jsonify({'error': 'Google Sheets não autenticado.'}), 500
+            os.remove(filepath) # Remove o arquivo temporário mesmo em erro
+            return jsonify({'error': 'Google Sheets não autenticado. Verifique suas credenciais.'}), 500
+        
         try:
-            sh = gs_client.create(f'Upload_{filename}')
-            worksheet = sh.sheet1
+            # Cria uma nova planilha no Google Sheets com um nome baseado no arquivo
+            # Adiciona timestamp para garantir nomes únicos e evitar conflitos
+            sheet_title = f'Upload_{filename.replace(".", "_")}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
+            sh = gs_client.create(sheet_title)
+            worksheet = sh.sheet1 # Pega a primeira aba da nova planilha
+            
+            # Converte o DataFrame para uma lista de listas (incluindo cabeçalhos) para upload
+            # Pandas para lista: df.values.tolist() para dados, df.columns.values.tolist() para cabeçalhos
             worksheet.update([df.columns.values.tolist()] + df.values.tolist())
-            sheet_url = sh.url
+            
+            sheet_url = sh.url # Pega a URL da nova planilha criada
         except Exception as e:
-            os.remove(filepath)
-            return jsonify({'error': f'Erro ao criar planilha no Google Sheets: {e}'}), 500
+            if os.path.exists(filepath):
+                os.remove(filepath) # Remove o arquivo temporário mesmo em erro
+            return jsonify({'error': f'Erro ao criar ou preencher planilha no Google Sheets: {e}'}), 500
+        
+        # Remove o arquivo temporário após o upload bem-sucedido
         os.remove(filepath)
         return jsonify({'message': 'Arquivo enviado e planilha criada com sucesso!', 'sheet_url': sheet_url})
     else:
-        return jsonify({'error': 'Tipo de arquivo não suportado.'}), 400
+        return jsonify({'error': 'Tipo de arquivo não suportado. Apenas .xlsx e .xls são permitidos.'}), 400
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
