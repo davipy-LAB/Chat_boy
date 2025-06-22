@@ -2,27 +2,23 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100%; /* Garante que o html e body ocupem no mínimo 100% da viewport */
-    background-color: #0d1117; /* Define o fundo preto para todo o documento */
-    /* Aplique o background animado ao HTML para garantir que ele se estenda por todo o scroll */
-    background-size: 400% 400%; /* Mantém o tamanho para a animação */
-    animation: gradientMove 15s ease infinite; /* Aplica a animação ao fundo */
-    filter: contrast(120%) brightness(100%); /* Mantém o filtro de cor */
-    overflow-x: hidden; /* Evita rolagem horizontal indesejada */
+    height: 100%;
+    background-color: #0d1117;
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+    filter: contrast(120%) brightness(100%);
+    overflow-x: hidden;
 }
 
 /* Estilos para o tsparticles */
 #tsparticles {
-  /* Mudança CRÍTICA: de fixed para absolute */
-  position: absolute; /* Agora se posiciona em relação ao primeiro pai posicionado (o body) */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  /* Garante que cubra no mínimo a altura da tela, e se estenda com o conteúdo */
-  min-height: 100vh; /* Garante que ele cubra no mínimo a viewport */
-  height: auto; /* Permite que ele se expanda se o conteúdo do body for maior que a viewport */
-  z-index: -1; /* Essencial: coloca o tsparticles no fundo, abaixo de todo o resto */
-  /* Remove as propriedades de background e animação daqui, elas foram movidas para html/body */
+  min-height: 100vh;
+  height: auto;
+  z-index: -1;
 }
 
 @keyframes gradientMove {
@@ -32,19 +28,11 @@ html, body {
 }
 
 body {
-    /* As propriedades de background e animação foram movidas para html, body acima */
-    /* background-size: 400% 400%; */
-    /* animation: gradientMove 15s ease infinite; */
-    /* filter: contrast(120%) brightness(100%); */
-    /* background-color: #0d1117; / / Já definido no html,body */
-
-    /* overflow-x: hidden; / / Já definido no html,body */
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh; /* Ainda para garantir que o chat fique centralizado na tela inicial */
+    min-height: 100vh;
     color: #fff;
-    /* position: relative; /* Já está lá, mas é importante para o #tsparticles absolute */
 }
 
 .text {
@@ -119,7 +107,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* Manter 100vh se o chat não for rolável verticalmente */
+    height: 100vh;
     position: relative;
     z-index: 5;
 }
@@ -210,6 +198,8 @@ body {
     background-color: #f2f2f2;
     border-top: 1px solid #ccc;
     flex-shrink: 0;
+    flex-direction: row; /* Garante linha em qualquer tela */
+    gap: 8px;
 }
 
 .chat-input input {
@@ -312,22 +302,25 @@ body {
     }
 
     .chat-input {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row !important;
+        align-items: center;
+        gap: 8px;
         padding: 8px;
     }
-
+    #uploadForm {
+        flex-direction: row !important;
+        margin-right: 8px;
+    }
     .chat-input input {
-        margin-bottom: 8px;
+        margin-bottom: 0;
         font-size: 1rem;
         padding: 8px;
     }
-
     .chat-input button {
-        width: 100%;
+        width: auto;
         margin-left: 0;
         font-size: 1rem;
-        padding: 8px;
+        padding: 8px 12px;
     }
 }
 
@@ -359,6 +352,17 @@ body {
         transform: translateX(0);
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
     }
+
+    .chat-input {
+        flex-direction: row !important;
+        align-items: center;
+        gap: 6px;
+        padding: 6px;
+    }
+    #uploadForm {
+        flex-direction: row !important;
+        margin-right: 6px;
+    }
 }
 
 /* Telas menores que 360px (smartphones muito pequenos) */
@@ -372,4 +376,53 @@ body {
     .chat-header, .chat-message, .chat-input input, .chat-input button {
         font-size: 14px;
     }
+    .chat-input {
+        flex-direction: row !important;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+    }
+    #uploadForm {
+        flex-direction: row !important;
+        margin-right: 4px;
+    }
+}
+
+/* CSS Botâo de upload */
+/* Botão de upload de Excel com ícone, redondo e à esquerda do input */
+#uploadForm {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    margin-right: 10px;
+}
+
+#uploadLabel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    font-size: 1.3rem;
+    margin-right: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    border: none;
+}
+
+#uploadLabel:hover {
+    background: #0056b3;
+    transform: scale(1.1);
+}
+
+#uploadLabel i {
+    pointer-events: none;
+}
+
+#uploadForm input[type="file"] {
+    display: none;
 }

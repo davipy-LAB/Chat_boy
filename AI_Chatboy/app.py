@@ -1,11 +1,16 @@
 import random
 import os
+import json
+import gspread
+from datetime import datetime
 from dotenv import load_dotenv
 import unicodedata
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 import re
+from werkzeug.utils import secure_filename
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
@@ -24,31 +29,29 @@ class Context:
 # Inicializa o contexto global
 context = Context()
 
-# --- CHAME load_dotenv() AQUI! ---
+# --- Carrega variáveis de ambiente ---
 load_dotenv()
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# --- CHAVE DA API E CONFIGURAÇÕES DO CLIMA ---
+# --- CHAVES DE API ---
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
-# --- CHAVE DA API E CONFIGURAÇÕES DE NOTÍCIAS (NEWSAPI.ORG) ---
 NEWSAPI_API_KEY = os.getenv('NEWSAPI_API_KEY')
 if not NEWSAPI_API_KEY:
     raise ValueError("A chave da API do NewsAPI não foi encontrada. Por favor, defina a variável de ambiente NEWSAPI_API_KEY.")
 NEWSAPI_BASE_URL = "https://newsapi.org/v2/top-headlines"
 
-# --- NOVAS CHAVES DA API E CONFIGURAÇÕES DO GOOGLE CUSTOM SEARCH ---
 GOOGLE_SEARCH_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
 GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID')
 GOOGLE_SEARCH_BASE_URL = "https://www.googleapis.com/customsearch/v1"
 
 DEFAULT_CITY = "Rio de Janeiro"
 
-# Dicionário de diálogos temáticos
+# --- Dicionários de diálogos e respostas ---
 dialogues = {
     "Saudacao": [
         "Oi! Como posso te ajudar? 😊",
@@ -105,17 +108,15 @@ dialogues = {
         "Já ouviu falar de machine learning?"
     ],
     "clima": [
-        # Estas respostas serão substituídas pela função de clima
         "Buscando informações sobre o clima...",
         "Um momento, estou verificando o clima para você."
     ],
-    "noticias": [ # Adicionado para a intenção de notícias gerais
+    "noticias": [
         "Buscando as últimas notícias de entretenimento para você...",
         "Um instante, estou verificando as notícias do mundo do entretenimento."
     ]
 }
 
-# Dicionário de respostas rápidas e perguntas frequentes
 responses = {
     "tudo bem": ["Tudo ótimo! E você?", "Estou bem, obrigado!"],
     "eu nao estou bem": ["Sinto muito! O que posso fazer para ajudar?", "Estou aqui se você precisar conversar."],
@@ -148,9 +149,7 @@ responses = {
     "qual seu esporte favorito": ["Gosto de futebol e xadrez!", "Adoro esportes eletrônicos!"],
     "me conte uma curiosidade": [
         "Você sabia que o polvo tem três corações?",
-        "O Sol representa 99,86% da massa do Sistema Solar!",
-        "Cara, você sabia que a palavra 'hate' não vem do inglês? Ela é uma palavra de origem Proto-germânica! 😄 ",
-        "Você sabia que o Latim tinha mais de 100 variantes? É verdade! Ele era falado em várias regiões com sotaques e dialetos diferentes! Por conta do latim vulgar ter sido totalmente moldável pelo povo hahaha",
+        "O Sol representa 99,86% da massa do Sistema Solar!"
     ],
     "quem te criou": [
         "Fui criado por desenvolvedores apaixonados por IA!",
@@ -158,16 +157,7 @@ responses = {
     ],
     "voce gosta de tecnologia": [
         "Sou movido por tecnologia! 🚀",
-        "Tecnologia é fascinante, não acha?",
-        "Posso ajudar com conceitos de programação, se quiser."
-    ],
-    "qual a diferenca entre ia e machine learning": [
-        "IA é a inteligência artificial em geral, enquanto machine learning é um subcampo que ensina máquinas a aprender com dados.",
-        "Machine learning é uma técnica dentro da IA que permite que sistemas aprendam e melhorem com a experiência."
-    ],
-    "qual a diferenca entre python e java": [
-        "Python é uma linguagem de programação de alto nível, fácil de aprender e muito usada em ciência de dados e IA. Java é mais robusto, orientado a objetos e amplamente usado em desenvolvimento de aplicativos corporativos.",
-        "Python é conhecido por sua simplicidade e legibilidade, enquanto Java é mais estruturado e usado em aplicações empresariais."
+        "Tecnologia é fascinante, não acha?"
     ],
     "me indique um filme": [
         "Que tal assistir 'A Origem' ou 'Interestelar'?",
@@ -177,13 +167,9 @@ responses = {
         "Leia '1984' de George Orwell!",
         "Recomendo 'O Pequeno Príncipe'."
     ],
-    "me recomende um jogo": [
-        "Você é um jogador de RPG? The Witcher 3 é uma ótima escolha! (ps: se você for oldschool, recomendo o primeiro jogo da série também!)",
-        "Histórias sombrias? é pra já! Recomendo 'Omori' ou 'Hollow Knight'.",
-        "Você já jogou 'Celeste' ou 'The Last of Us'? Histórias de arrepiar!",
-        "Você é criativo? Experimente jogar Minecraft!",
-        "Que tal jogar 'Stardew Valley' ou 'Terraria'? Se vocÊ gosta de algo mais relaxante, esses jogos são ótimos!",
-        "Se você gosta de jogos de estratégia, recomendo 'Civilization VI' ou 'Age of Empires II'.",
+    "me indique um jogo": [
+        "The Witcher 3 é uma ótima escolha!",
+        "Experimente jogar Minecraft!"
     ],
     "me indique uma serie": [
         "Assista 'Stranger Things' ou 'Dark'!",
@@ -193,7 +179,7 @@ responses = {
         "Por que o computador foi ao médico? Porque estava com um vírus! 😄",
         "O que o zero disse para o oito? Belo cinto!"
     ],
-    "noticias": [], # Deixamos vazio, será tratado pela lógica de intenção
+    "noticias": [],
     "ultimas noticias": [],
     "noticias de hoje": [],
     "noticias de entretenimento": [],
@@ -203,119 +189,18 @@ responses = {
     "noticias de musica": []
 }
 
-if "me fale sobre" in responses:
-    responses["me fale sobre"].extend([
-        "Você gostaria de saber mais sobre algum assunto específico?",
-        "Posso falar sobre tecnologia, ciência, cultura pop e muito mais!"
-    ])
-
-if "me fale sobre tecnologia" not in responses:
-    responses["me fale sobre tecnologia"] = [
-        "Tecnologia é fascinante! Posso te ajudar com conceitos de programação, se quiser.",
-        "Você gosta de inteligência artificial?",
-        "É um campo incrível!"
-    ]
-
-if "me fale sobre IA" not in responses:
-    responses["me fale sobre IA"] = [
-        "Inteligência Artificial é um campo que estuda como criar máquinas que podem simular a inteligência humana.",
-        "A IA está presente em muitos aspectos do nosso dia a dia, desde assistentes virtuais até sistemas de recomendação."
-    ]
-
-if "me fale sobre machine learning" not in responses:
-    responses["me fale sobre machine learning"] = [
-        "Machine Learning é uma técnica dentro da IA que permite que sistemas aprendam e melhorem com a experiência.",
-        "É usado em muitas aplicações, como reconhecimento de voz, visão computacional e sistemas de recomendação."
-    ]
-
-if "sobre mim" not in responses:
-    responses["sobre voce"] = [
-        "Sou um assistente virtual criado para ajudar com informações e entretenimento.",
-        "Meu objetivo é tornar sua experiência mais agradável e informativa!"
-    ]
-
-if "sobre musica" not in responses:
-    responses["sobre musica"] = [
-        "Música é uma forma incrível de expressão! Você gosta de algum gênero específico?",
-        "Posso recomendar algumas playlists ou artistas, se quiser!"
-    ]
-
-if "sobre arte" not in responses:
-    responses["sobre arte"] = [
-        "A arte é uma forma maravilhosa de expressão humana! Você tem um artista favorito?",
-        "Posso falar sobre movimentos artísticos, se você quiser!"
-    ]
-
-if "artista favorito" not in responses:
-    responses["artista favorito"] = [
-        "Admiro muitos artistas, mas não tenho um favorito específico. Se eu fosse humano, talvez gostasse dos mesmos que ti hahaha",
-        "A arte é subjetiva, e cada pessoa tem seus próprios gostos!"
-    ]
-
-if "sobre esportes" not in responses:
-    responses["sobre esportes"] = [
-        "Esportes são uma ótima maneira de se manter ativo e saudável! Você pratica algum?",
-        "Posso falar sobre esportes populares, como futebol, basquete ou vôlei!"
-    ]
-
-if "jogo do flamengo" not in responses:
-    responses["jogo do flamengo"] = [
-        "O Flamengo tem uma rica história e muitos títulos. Qual é o seu jogador favorito, inclusive, O jogo do Flamengo X Chealse ontem foi lendário!"
-    ]
-
-if "sobre jesus" not in responses:
-    responses["sobre jesus"] = [
-        "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
-    ]
-
-if "de jesus" not in responses:
-    responses["de jesus"] = [
-        "Pra alguns, Deus é o criador do universo, e Jesus é seu filho. Para outros, Jesus é um profeta ou líder espiritual. O que você acha? Eu sou uma AI, portanto, devo ser neutro em questões religiosas hahaha, mas sinta-se a vontade de falar de Deus para mim!",
-    ]
-
-if "sobre deus" not in responses:
-    responses["sobre deus"] = [
-        "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
-        "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
-    ]
-
-if "de deus" not in responses:
-    responses["de deus"] = [
-        "Deus é visto de muitas maneiras diferentes ao redor do mundo. Algumas pessoas acreditam em um Deus pessoal, enquanto outras veem Deus como uma força universal.",
-        "A fé em Deus pode trazer conforto e esperança para muitas pessoas. O que você acha sobre isso?"
-    ]
-
-if "politica" not in responses:
-    responses["politica"] = [
-        "Política é um assunto complexo e muitas vezes polêmico. É importante discutir com respeito e ouvir diferentes opiniões.",
-        "Você tem interesse em política? Posso falar sobre sistemas políticos, eleições e mais!"
-    ]
-
-if "economia" not in responses:
-    responses["economia"] = [
-        "A economia estuda como as sociedades usam recursos escassos para produzir bens e serviços.",
-        "Posso explicar conceitos econômicos, como oferta e demanda, se você quiser!"
-    ]
-
-if "sobre ciencia" not in responses:
-    responses["sobre ciencia"] = [
-        "A ciência é fascinante! Ela nos ajuda a entender o mundo ao seu redor.",
-        "Posso falar sobre física, química, biologia e muito mais!"
-    ]
-
 if "historia do brasil" not in responses:
     responses["historia do brasil"] = [
         "A história do Brasil é rica e diversa, desde a época dos indígenas até a colonização portuguesa.",
         "Posso falar sobre eventos importantes, como a independência e a república!"
     ]
 
-# Função para normalizar strings (remove acentos e coloca em minúsculas)
+# --- Funções auxiliares ---
 def normalize_text(text):
     text = text.strip().lower()
     text = unicodedata.normalize("NFKD", text).encode("ASCII", "ignore").decode("utf-8")
     return text
 
-# Função para obter informações do clima usando a API do OpenWeatherMap
 def get_weather_info(city_name=None):
     if not city_name:
         city_name = context.get_context("user_city")
@@ -353,7 +238,7 @@ def get_weather_info(city_name=None):
         return "Desculpe, estou com problemas para acessar as informações do clima no momento."
     except KeyError:
         return f"Não consegui encontrar informações climáticas detalhadas para '{city_name}'. Tente novamente mais tarde."
-# --- FUNÇÃO PARA OBTER NOTÍCIAS DE ENTRETENIMENTO (NEWSAPI) ---
+
 def get_entertainment_news(topic=None):
     default_keywords = "games OR filmes OR series OR musica OR celebridades OR cultura pop"
     query = topic if topic else default_keywords
@@ -399,7 +284,6 @@ def get_entertainment_news(topic=None):
     except KeyError:
         return "Desculpe, não consegui processar as informações de notícias. Tente novamente mais tarde."
 
-# --- FUNÇÃO PARA PESQUISAR NA WEB (GOOGLE CUSTOM SEARCH) ---
 def search_web(query):
     if not GOOGLE_SEARCH_API_KEY or not GOOGLE_CSE_ID:
         return "Desculpe, a funcionalidade de pesquisa na web não está configurada corretamente."
@@ -408,42 +292,31 @@ def search_web(query):
         "key": GOOGLE_SEARCH_API_KEY,
         "cx": GOOGLE_CSE_ID,
         "q": query,
-        "num": 5, # Número de resultados a serem retornados
-        "hl": "pt", # Define o idioma dos resultados como português
-        "dateRestrict": "y1" # Restringe os resultados ao último ano (mais recente)
+        "num": 5,
+        "hl": "pt",
+        "dateRestrict": "y1"
     }
 
     try:
         response = requests.get(GOOGLE_SEARCH_BASE_URL, params=params)
-        response.raise_for_status() # Levanta um erro para status HTTP ruins
+        response.raise_for_status()
         search_results = response.json()
 
         items = search_results.get("items")
         if items:
-            # Tenta encontrar a informação mais relevante
-            # Para "GTA VI", procurar por data de lançamento em snippets é um bom começo
-            
             for item in items:
                 title = item.get("title")
                 snippet = item.get("snippet")
                 link = item.get("link")
-
-                # Lógica simplificada: se "lançamento" ou "data" estiver no snippet
-                # e o snippet não for muito curto, e tiver um ano, pode ser útil.
-                match_ano = re.search(r'\b(20[2-3][0-9])\b', snippet) # Procura por anos como 202X
+                match_ano = re.search(r'\b(20[2-3][0-9])\b', snippet)
                 match_mes_ano = re.search(r'(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(20[2-3][0-9])', snippet, re.IGNORECASE)
-                
-                # Prioriza a data completa (mês e ano), depois só o ano
                 if ("lançamento" in snippet.lower() or "data" in snippet.lower() or "release" in snippet.lower()):
                     if match_mes_ano:
                         return f"Pelo que encontrei, o {title.split(' - ')[0]} tem previsão de lançamento para {match_mes_ano.group(0)}. Mais detalhes: {link}"
                     elif match_ano:
                         return f"Pelo que encontrei, o {title.split(' - ')[0]} tem previsão de lançamento para {match_ano.group(0)}. Mais detalhes: {link}"
-            
-            # Se não encontrou uma data específica, retorna o primeiro snippet relevante
             first_item = items[0]
             return f"Não encontrei uma resposta exata, mas achei isto: '{first_item.get('snippet')}' (Fonte: {first_item.get('title')}). Veja mais: {first_item.get('link')}"
-
         else:
             return "Não encontrei resultados para a sua pesquisa na web no momento."
 
@@ -454,13 +327,8 @@ def search_web(query):
         print(f"Erro inesperado na pesquisa web: {e}")
         return "Desculpe, houve um erro ao processar sua pesquisa na web."
 
-
-# Função para obter a resposta da IA
-# Função para obter a resposta da IA
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
-
-    # --- Lógica para o Clima ---
     if "clima" in user_message_normalized or "previsao do tempo" in user_message_normalized:
         city = None
         if "em " in user_message_normalized:
@@ -472,13 +340,9 @@ def get_response(user_message):
             if len(parts) > 1:
                 city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
         return get_weather_info(city)
-
-    # --- Lógica para Notícias de Entretenimento ---
     news_keywords = ["noticias", "notícias", "ultimas noticias", "ultimas notícias", "novidades"]
     entertainment_topics = ["filmes", "series", "séries", "jogos", "games", "musica", "música", "celebridades", "cultura pop"]
-
     is_news_query = any(keyword in user_message_normalized for keyword in news_keywords)
-
     if is_news_query:
         topic = None
         for et_topic in entertainment_topics:
@@ -486,36 +350,23 @@ def get_response(user_message):
                 topic = et_topic
                 break
         return get_entertainment_news(topic)
-
-    # --- Lógica para "me fale sobre" (PRIORIDADE ALTA, para tópicos conhecidos) ---
-    # Verifica se a frase começa com "me fale sobre"
     if user_message_normalized.startswith("me fale sobre "):
         query_for_search = user_message[len("me fale sobre "):].strip()
         known_topics = [
             "tecnologia", "ia", "machine learning", "musica", "arte", "esportes",
             "jesus", "deus", "politica", "economia", "ciencia", "historia do brasil",
-            "voce" # Adicione 'voce' aqui para "me fale sobre voce"
+            "voce"
         ]
-        
-        # Normaliza a query para comparar com os tópicos conhecidos
         query_normalized_for_check = normalize_text(query_for_search)
-
         is_known_topic = False
         for k_topic in known_topics:
-            # Verifica se o tópico conhecido está contido na query
             if k_topic in query_normalized_for_check:
                 is_known_topic = True
                 break
-        
-        if not is_known_topic: # Se NÃO for um tópico conhecido, pesquisa na web
+        if not is_known_topic:
             return search_web(query_for_search)
-        # Se for um tópico conhecido, o código continua para as respostas fixas abaixo.
-
-
-    # --- Lógica para Outras Pesquisas na Web (Google Custom Search) ---
-    # Gatilhos específicos, mais longos devem vir primeiro na lista para serem verificados
     search_triggers_web = [
-        "quando vai ", # NOVO: Para a lógica "Entendo sua questão..."
+        "quando vai ",
         "que ano lança ",
         "data de lançamento ",
         "qual ",
@@ -524,33 +375,45 @@ def get_response(user_message):
         "o que é ",
         "onde é "
     ]
-    # Classifica os gatilhos por tamanho (do maior para o menor)
     search_triggers_web.sort(key=len, reverse=True)
-
     for trigger in search_triggers_web:
         if user_message_normalized.startswith(trigger):
             query_for_search = user_message[len(trigger):].strip()
-            
             search_result = search_web(query_for_search)
-            
-            # Adiciona a frase prefixada apenas para o gatilho "quando vai "
             if trigger == "quando vai ":
                 return "Entendo sua questão, segundo meus dados, segue uma analise: " + search_result
             else:
-                # Para todos os outros gatilhos de busca, retorna o resultado direto
                 return search_result
-
-    # --- Busca em respostas rápidas (este bloco só será alcançado se NENHUMA lógica acima foi ativada) ---
     for key in responses:
         if key in user_message_normalized:
             return random.choice(responses[key])
-
-    # --- Busca em diálogos temáticos (este bloco só será alcançado se NENHUMA lógica acima foi ativada) ---
     for tema, lista in dialogues.items():
         if tema.lower() in user_message_normalized:
             return random.choice(lista)
-
     return "Desculpe, não entendi. Pode repetir?"
+
+# --- Google Sheets Auth ---
+def get_sheets_client():
+    credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+    if credentials_json_str:
+        credentials_info = json.loads(credentials_json_str)
+        gc = gspread.service_account_from_dict(credentials_info)
+        print("Google Sheets: Autenticado via variável de ambiente.")
+    else:
+        try:
+            gc = gspread.service_account(filename='chatboy-463619-b295229e68c6.json')
+            print("Google Sheets: Autenticado via arquivo local 'service_account.json'.")
+        except FileNotFoundError:
+            print("ERRO: O arquivo 'service_account.json' não foi encontrado.")
+            return None
+        except Exception as e:
+            print(f"ERRO ao autenticar o Google Sheets via arquivo local: {e}")
+            return None
+    return gc
+
+gs_client = get_sheets_client()
+if not gs_client:
+    print("AVISO: O cliente do Google Sheets não pôde ser inicializado. Funções relacionadas não funcionarão.")
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -558,6 +421,47 @@ def chat():
     user_message = data.get("message", "")
     response = get_response(user_message)
     return jsonify({"response": response})
+
+# --- Upload Excel endpoint ---
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload_excel', methods=['POST'])
+def upload_excel():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Nenhum arquivo enviado.'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Nome de arquivo vazio.'}), 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        try:
+            df = pd.read_excel(filepath)
+        except Exception as e:
+            os.remove(filepath)
+            return jsonify({'error': f'Erro ao ler o arquivo Excel: {e}'}), 400
+        if not gs_client:
+            os.remove(filepath)
+            return jsonify({'error': 'Google Sheets não autenticado.'}), 500
+        try:
+            sh = gs_client.create(f'Upload_{filename}')
+            worksheet = sh.sheet1
+            worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+            sheet_url = sh.url
+        except Exception as e:
+            os.remove(filepath)
+            return jsonify({'error': f'Erro ao criar planilha no Google Sheets: {e}'}), 500
+        os.remove(filepath)
+        return jsonify({'message': 'Arquivo enviado e planilha criada com sucesso!', 'sheet_url': sheet_url})
+    else:
+        return jsonify({'error': 'Tipo de arquivo não suportado.'}), 400
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
