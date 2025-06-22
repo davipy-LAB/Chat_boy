@@ -8,4 +8,4 @@ requests==2.31.0
 gspread==6.0.0
 openpyxl==3.1.2
 Werkzeug==3.0.1
-pandas==2.0.3  # <<--- Mude para esta versão
+pandas  # <<--- Mude para esta versão
