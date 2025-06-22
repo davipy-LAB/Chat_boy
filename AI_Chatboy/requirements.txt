@@ -1,9 +1,11 @@
 gunicorn==21.2.0
 Flask==2.3.3
+dotenv
+python-dotenv==1.0.1
+requests==2.31.0
 flask-cors==4.0.0
 requests==2.31.0
 gspread==6.0.0
-pandas==2.0.3  # <<--- Mude para esta versão
 openpyxl==3.1.2
-python-dotenv==1.0.1
 Werkzeug==3.0.1
+pandas==2.0.3  # <<--- Mude para esta versão
