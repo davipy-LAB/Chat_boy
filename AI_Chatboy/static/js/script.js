@@ -12,7 +12,7 @@ function addMessage(text, sender) {
 
     const messageText = document.createElement("p");
     messageText.classList.add("message-text");
-    messageText.textContent = text;
+    messageText.innerHTML = text; // Usar innerHTML para permitir negrito (**) ou links
 
     messageContent.appendChild(messageText);
     messageDiv.appendChild(messageContent);
@@ -22,7 +22,7 @@ function addMessage(text, sender) {
 }
 
 // Função para enviar a mensagem para o backend e obter a resposta
-async function sendMessage() { // <-- Esta é a ÚNICA definição de sendMessage
+async function sendMessage() {
     const userMessage = userInput.value.trim();
 
     if (userMessage === "") {
@@ -43,21 +43,48 @@ async function sendMessage() { // <-- Esta é a ÚNICA definição de sendMessag
         backendUrl = window.location.origin + "/chat"; // URL para o deploy (Render)
     }
 
-    // Envia a mensagem para o backend
-    const response = await fetch(backendUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: userMessage }),
-    });
+    try {
+        // Envia a mensagem para o backend
+        const response = await fetch(backendUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message: userMessage }),
+        });
 
-    // Converte a resposta para JSON
-    const data = await response.json();
+        // Verifica se a resposta da rede foi OK
+        if (!response.ok) {
+            throw new Error(`Erro HTTP! Status: ${response.status}`);
+        }
 
-    // Adiciona a resposta do bot ao chat
-    addMessage(data.response, "bot");
-} // <-- Certifique-se de que esta é a chave de fechamento correta para sendMessage
+        // Converte a resposta para JSON
+        const data = await response.json();
+
+        // --- Lógica para lidar com a 'action' do bot ---
+        if (data.action === "redirect_to_youtube" && data.url) {
+            // Se a ação for redirecionar para o YouTube, o bot já deu a resposta.
+            // Aqui, adicionamos a resposta do bot e then redirecionamos.
+            addMessage(data.response, "bot");
+            setTimeout(() => {
+                window.open(data.url, '_blank'); // Abre o link em uma nova aba
+            }, 1500); // Dá um pequeno atraso para a mensagem aparecer antes de redirecionar
+        } else if (data.action === "ask_for_youtube_redirect") {
+            // Se o bot está perguntando se deseja redirecionar, adicionamos a resposta
+            // O frontend não precisa fazer nada além de exibir a pergunta
+            addMessage(data.response, "bot");
+            // As próximas mensagens do usuário serão tratadas pelo contexto no backend
+        }
+        else {
+            // Se não houver uma ação específica, apenas adiciona a resposta normal
+            addMessage(data.response, "bot");
+        }
+
+    } catch (error) {
+        console.error("Erro ao enviar mensagem ou processar resposta:", error);
+        addMessage("Desculpe, ocorreu um erro ao processar sua solicitação. Por favor, tente novamente mais tarde.", "bot");
+    }
+}
 
 // Função que ativa o envio ao pressionar Enter
 userInput.addEventListener("keypress", (event) => {
@@ -71,7 +98,7 @@ sendButton.addEventListener("click", () => {
     sendMessage();
 });
 
-// Referências para os novos elementos
+// Referências para os novos elementos (mantidos do seu script original)
 const sidebar = document.querySelector('.sidebar');
 const overlay = document.getElementById('overlay');
 

@@ -9,14 +9,16 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 import re
+from google.oauth2.service_account import Credentials
 from werkzeug.utils import secure_filename
 import pandas as pd
+import pytz # Importar pytz para lidar com fusos horários
 
 app = Flask(__name__)
 CORS(app)
 
 # --- Classe de contexto para armazenar informações do usuário ---
-class Context:
+class ContextManager: # Renomeado para evitar conflito com 'context' global
     def __init__(self):
         self.context = {}
 
@@ -26,8 +28,15 @@ class Context:
     def get_context(self, key):
         return self.context.get(key, None)
 
+    def clear_context(self, key=None):
+        if key:
+            if key in self.context:
+                del self.context[key]
+        else:
+            self.context = {}
+
 # Inicializa o contexto global
-context = Context()
+context = ContextManager() # Usando o nome correto da classe
 
 # --- Carrega variáveis de ambiente ---
 load_dotenv()
@@ -42,16 +51,49 @@ OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 NEWSAPI_API_KEY = os.getenv('NEWSAPI_API_KEY')
 if not NEWSAPI_API_KEY:
-    raise ValueError("A chave da API do NewsAPI não foi encontrada. Por favor, defina a variável de ambiente NEWSAPI_API_KEY.")
+    # Não levante exceção aqui, apenas imprima um aviso e permita que outras partes do código funcionem
+    print("AVISO: A chave da API do NewsAPI não foi encontrada. Notícias não funcionarão.")
 NEWSAPI_BASE_URL = "https://newsapi.org/v2/top-headlines"
 
 GOOGLE_SEARCH_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
 GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID')
+if not GOOGLE_SEARCH_API_KEY or not GOOGLE_CSE_ID:
+    print("AVISO: Chaves da API do Google Search (CSE) não configuradas. Pesquisa web não funcionará.")
 GOOGLE_SEARCH_BASE_URL = "https://www.googleapis.com/customsearch/v1"
+
+YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
+if not YOUTUBE_API_KEY:
+    print("AVISO: Chave da API do YouTube não encontrada. Funções do YouTube não funcionarão.")
+YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3/search"
+
+# --- Google Sheets Auth ---
+SHEET_ID = os.getenv('SHEET_ID')
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+SERVICE_ACCOUNT_FILE = 'AI_Chatboy/credentials.json' # O nome do seu arquivo de credenciais.
+
+gs_client = None
+try:
+    # Preferimos o arquivo de credenciais se ele existir
+    if os.path.exists(SERVICE_ACCOUNT_FILE):
+        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+        gs_client = gspread.authorize(creds)
+        print(f"Conexão com o Google Sheets estabelecida via arquivo: '{SERVICE_ACCOUNT_FILE}'.")
+    else:
+        # Tenta a variável de ambiente como fallback
+        credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+        if credentials_json_str:
+            credentials_info = json.loads(credentials_json_str)
+            gs_client = gspread.service_account_from_dict(credentials_info)
+            print("Conexão com o Google Sheets estabelecida via variável de ambiente.")
+        else:
+            print("AVISO: Nem 'credentials.json' nem 'GOOGLE_SHEETS_CREDENTIALS' foram encontrados. Funções do Google Sheets não funcionarão.")
+except Exception as e:
+    print(f"ERRO: Não foi possível conectar ao Google Sheets. Verifique suas credenciais. Erro: {e}")
 
 DEFAULT_CITY = "Rio de Janeiro"
 
 # --- Dicionários de diálogos e respostas ---
+# (Mantidos como estavam, mas a lógica de uso será no get_response)
 dialogues = {
     "Saudacao": [
         "Oi! Como posso te ajudar? 😊",
@@ -135,7 +177,7 @@ responses = {
         "Sou um assistente virtual criado para ajudar!",
         "Sou um chatbot treinado em várias áreas, pronto para conversar!"
     ],
-    "me fale sobre o clima": [],
+    "me fale sobre o clima": [], # Removido, pois a função get_weather_info lida com isso.
     "eu te amo": ["Eu também te amo! 💙", "Amo ajudar você!"],
     "qual e seu jogo favorito": ["Adoro The Witcher!", "Meu jogo favorito é The Witcher!"],
     "qual e seu filme favorito": ["Adoro Matrix!", "Meu filme favorito é Matrix!"],
@@ -179,6 +221,7 @@ responses = {
         "Por que o computador foi ao médico? Porque estava com um vírus! 😄",
         "O que o zero disse para o oito? Belo cinto!"
     ],
+    # Notícias serão tratadas por get_entertainment_news
     "noticias": [],
     "ultimas noticias": [],
     "noticias de hoje": [],
@@ -211,8 +254,8 @@ if "me fale sobre tecnologia" not in responses:
         "Você gosta de inteligência artificial?",
         "É um campo incrível!"
     ]
-if "me fale sobre IA" not in responses:
-    responses["me fale sobre IA"] = [
+if "me fale sobre ia" not in responses: # Convertido para minúsculas
+    responses["me fale sobre ia"] = [
         "Inteligência Artificial é um campo que estuda como criar máquinas que podem simular a inteligência humana.",
         "A IA está presente em muitos aspectos do nosso dia a dia, desde assistentes virtuais até sistemas de recomendação."
     ]
@@ -222,7 +265,7 @@ if "me fale sobre machine learning" not in responses:
         "É usado em muitas aplicações, como reconhecimento de voz, visão computacional e sistemas de recomendação."
     ]
 if "sobre mim" not in responses:
-    responses["sobre voce"] = [
+    responses["sobre voce"] = [ # Assumi que "sobre mim" se refere ao bot, então "sobre voce"
         "Sou um assistente virtual criado para ajudar com informações e entretenimento.",
         "Meu objetivo é tornar sua experiência mais agradável e informativa!"
     ]
@@ -248,7 +291,7 @@ if "sobre esportes" not in responses:
     ]
 if "jogo do flamengo" not in responses:
     responses["jogo do flamengo"] = [
-        "O Flamengo tem uma rica história e muitos títulos. Qual é o seu jogador favorito, inclusive, O jogo do Flamengo X Chealse ontem foi lendário!"
+        "O Flamengo tem uma rica história e muitos títulos. Qual é o seu jogador favorito, inclusive, O jogo do Flamengo X Chelsea ontem foi lendário!"
     ]
 if "sobre jesus" not in responses:
     responses["sobre jesus"] = [
@@ -284,6 +327,16 @@ if "sobre ciencia" not in responses:
         "Posso falar sobre física, química, biologia e muito mais!"
     ]
 
+# --- IDs de Canais do YouTube (para canais populares, para evitar busca API inicial) ---
+YOUTUBE_CHANNEL_IDS = {
+    "pewdiepie": "UC-lHJZR3GqXM24_Vd_AJX5w",
+    "felipe neto": "UC5p0_Bla8wz31Q1g2dM_7fg",
+    "nintendo": "UCqO7_pY_eR1iYQ-oSh_BBYQ",
+    "cellbit": "UCm00oYq43R71L5T2fB-zT_g",
+    # Adicione mais youtubers aqui que você quer que sejam encontrados rapidamente
+}
+
+
 # --- Funções auxiliares ---
 def normalize_text(text):
     text = text.strip().lower()
@@ -291,6 +344,9 @@ def normalize_text(text):
     return text
 
 def get_weather_info(city_name=None):
+    if not OPENWEATHER_API_KEY:
+        return {"response": "Desculpe, a chave da API do OpenWeatherMap não está configurada.", "action": "none"}
+
     if not city_name:
         city_name = context.get_context("user_city")
         if not city_name:
@@ -317,18 +373,21 @@ def get_weather_info(city_name=None):
             if city_name_returned.lower() != DEFAULT_CITY.lower():
                 context.set_context("user_city", city_name_returned)
 
-            return (f"O clima em {city_name_returned} está {description}, "
-                    f"com temperatura de {temp:.1f}°C e sensação térmica de {feels_like:.1f}°C.")
+            return {"response": (f"O clima em {city_name_returned} está {description}, "
+                                 f"com temperatura de {temp:.1f}°C e sensação térmica de {feels_like:.1f}°C."), "action": "none"}
         else:
-            return f"Não consegui encontrar informações climáticas para '{city_name}'. Poderia verificar o nome da cidade?"
+            return {"response": f"Não consegui encontrar informações climáticas para '{city_name}'. Poderia verificar o nome da cidade?", "action": "none"}
 
     except requests.exceptions.RequestException as e:
         print(f"Erro ao conectar com a API do OpenWeatherMap: {e}")
-        return "Desculpe, estou com problemas para acessar as informações do clima no momento."
+        return {"response": "Desculpe, estou com problemas para acessar as informações do clima no momento.", "action": "none"}
     except KeyError:
-        return f"Não consegui encontrar informações climáticas detalhadas para '{city_name}'. Tente novamente mais tarde."
+        return {"response": f"Não consegui encontrar informações climáticas detalhadas para '{city_name}'. Tente novamente mais tarde.", "action": "none"}
 
 def get_entertainment_news(topic=None):
+    if not NEWSAPI_API_KEY:
+        return {"response": "Desculpe, a chave da API do NewsAPI não está configurada.", "action": "none"}
+
     default_keywords = "games OR filmes OR series OR musica OR celebridades OR cultura pop"
     query = topic if topic else default_keywords
 
@@ -358,24 +417,25 @@ def get_entertainment_news(topic=None):
                 news_list.append(f"{i+1}. {title} ({source}). {description} Saiba mais: {url}")
 
             if topic:
-                return f"Aqui estão algumas notícias sobre {topic} para você:\n" + "\n".join(news_list)
+                return {"response": f"Aqui estão algumas notícias sobre {topic} para você:\n" + "\n".join(news_list), "action": "none"}
             else:
-                return "Aqui estão as principais notícias de entretenimento:\n" + "\n".join(news_list)
+                return {"response": "Aqui estão as principais notícias de entretenimento:\n" + "\n".join(news_list), "action": "none"}
         else:
             if topic:
-                return f"Não consegui encontrar notícias recentes sobre '{topic}' no momento."
+                return {"response": f"Não consegui encontrar notícias recentes sobre '{topic}' no momento.", "action": "none"}
             else:
-                return "Não consegui encontrar notícias de entretenimento recentes no momento."
+                return {"response": "Não consegui encontrar notícias de entretenimento recentes no momento.", "action": "none"}
 
     except requests.exceptions.RequestException as e:
         print(f"Erro ao conectar com a API da NewsAPI: {e}")
-        return "Desculpe, estou com problemas para acessar as notícias no momento."
+        return {"response": "Desculpe, estou com problemas para acessar as notícias no momento.", "action": "none"}
     except KeyError:
-        return "Desculpe, não consegui processar as informações de notícias. Tente novamente mais tarde."
+        return {"response": "Desculpe, não consegui processar as informações de notícias. Tente novamente mais tarde.", "action": "none"}
+
 
 def search_web(query):
     if not GOOGLE_SEARCH_API_KEY or not GOOGLE_CSE_ID:
-        return "Desculpe, a funcionalidade de pesquisa na web não está configurada corretamente."
+        return {"response": "Desculpe, a funcionalidade de pesquisa na web não está configurada corretamente.", "action": "none"}
 
     params = {
         "key": GOOGLE_SEARCH_API_KEY,
@@ -383,7 +443,7 @@ def search_web(query):
         "q": query,
         "num": 5,
         "hl": "pt",
-        "dateRestrict": "y1"
+        # "dateRestrict": "y1" # Remova ou comente esta linha, ela pode estar limitando a um ano
     }
 
     try:
@@ -395,73 +455,172 @@ def search_web(query):
         if items:
             best_match_info = None
             earliest_future_date = None
-
-            current_year = datetime.now().year
             
+            # Usar o fuso horário de São Paulo para consistência
+            tz_br = pytz.timezone('America/Sao_Paulo')
+            current_date_br = datetime.now(tz_br).replace(hour=0, minute=0, second=0, microsecond=0)
+
             for item in items:
                 title = item.get("title", "")
                 snippet = item.get("snippet", "")
                 link = item.get("link", "")
 
-                match_mes_ano = re.search(r'(?:janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(\d{4})', snippet, re.IGNORECASE)
+                match_data_completa = re.search(r'(\d{1,2}) de (janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro) de (\d{4})', snippet, re.IGNORECASE)
+                match_mes_ano = re.search(r'(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(\d{4})', snippet, re.IGNORECASE)
                 match_ano = re.search(r'\b(20[2-3][0-9])\b', snippet)
 
                 found_date_str = None
-                found_year = None
-                
-                if match_mes_ano:
+                parsed_date = None
+
+                meses = {
+                    'janeiro':1, 'fevereiro':2, 'março':3, 'abril':4, 'maio':5, 'junho':6,
+                    'julho':7, 'agosto':8, 'setembro':9, 'outubro':10, 'novembro':11, 'dezembro':12
+                }
+
+                if match_data_completa:
+                    day = int(match_data_completa.group(1))
+                    month_name = match_data_completa.group(2)
+                    year = int(match_data_completa.group(3))
+                    try:
+                        parsed_date = datetime(year, meses.get(month_name.lower(), 1), day)
+                        found_date_str = match_data_completa.group(0)
+                    except ValueError:
+                        pass
+                elif match_mes_ano:
+                    month_name = match_mes_ano.group(1)
+                    year = int(match_mes_ano.group(2))
+                    parsed_date = datetime(year, meses.get(month_name.lower(), 1), 1)
                     found_date_str = match_mes_ano.group(0)
-                    found_year = int(match_mes_ano.group(1))
                 elif match_ano:
+                    year = int(match_ano.group(1))
+                    parsed_date = datetime(year, 1, 1)
                     found_date_str = match_ano.group(0)
-                    found_year = int(match_ano.group(1))
 
-                if found_year:
-                    if found_year >= current_year:
-                        try:
-                            if match_mes_ano:
-                                mes_nome = match_mes_ano.group(0).split(' ')[0]
-                                mes_num = {
-                                    'janeiro':1, 'fevereiro':2, 'março':3, 'abril':4, 'maio':5, 'junho':6,
-                                    'julho':7, 'agosto':8, 'setembro':9, 'outubro':10, 'novembro':11, 'dezembro':12
-                                }.get(mes_nome.lower(), 1)
-                                current_parsed_date = datetime(found_year, mes_num, 1)
-                            else:
-                                current_parsed_date = datetime(found_year, 1, 1)
-
-                            if earliest_future_date is None or current_parsed_date < earliest_future_date:
-                                earliest_future_date = current_parsed_date
-                                best_match_info = {
-                                    "title": title,
-                                    "snippet": snippet,
-                                    "link": link,
-                                    "date_str": found_date_str,
-                                    "parsed_date": current_parsed_date
-                                }
-                        except Exception as e:
-                            print(f"Erro ao parsear data: {e} no snippet: {snippet}")
-                            pass
+                # Comparar com a data atual no fuso horário correto
+                if parsed_date and parsed_date.replace(hour=0, minute=0, second=0, microsecond=0) >= current_date_br:
+                    if earliest_future_date is None or parsed_date < earliest_future_date:
+                        earliest_future_date = parsed_date
+                        best_match_info = {
+                            "title": title,
+                            "snippet": snippet,
+                            "link": link,
+                            "date_str": found_date_str,
+                            "parsed_date": parsed_date
+                        }
             
             if best_match_info:
                 clean_query_for_response = query.replace('que ano lança o ', '').replace('data de lançamento ', '').strip()
-                return (f"Pelo que encontrei, a previsão de lançamento para '{clean_query_for_response}' é em **{best_match_info['date_str']}**. "
-                        f"Mais detalhes: {best_match_info['link']}")
+                
+                # Formata a data para a resposta de forma mais legível
+                if best_match_info['parsed_date'].day != 1 or best_match_info['parsed_date'].month != 1:
+                    formatted_date_response = best_match_info['parsed_date'].strftime("%d de %B de %Y")
+                elif best_match_info['parsed_date'].month != 1:
+                    formatted_date_response = best_match_info['parsed_date'].strftime("%B de %Y")
+                else:
+                    formatted_date_response = best_match_info['parsed_date'].strftime("%Y")
+
+                return {"response": (f"Pelo que encontrei, a previsão de lançamento para '{clean_query_for_response}' é em **{formatted_date_response}**. "
+                                     f"Mais detalhes: {best_match_info['link']}"), "action": "none"}
             
             if items:
                 first_relevant_snippet = items[0].get('snippet', '')
                 first_relevant_title = items[0].get('title', '')
                 first_relevant_link = items[0].get('link', '')
-                return (f"Não encontrei uma data de lançamento exata ou futura imediata, mas achei isto: "
-                        f"'{first_relevant_snippet}' (Fonte: {first_relevant_title}). Veja mais: {first_relevant_link}")
+                return {"response": (f"Não encontrei uma data de lançamento exata ou futura imediata, mas achei isto: "
+                                     f"'{first_relevant_snippet}' (Fonte: {first_relevant_title}). Veja mais: {first_relevant_link}"), "action": "none"}
             else:
-                return "Não encontrei resultados para a sua pesquisa na web no momento."
+                return {"response": "Não encontrei resultados para a sua pesquisa na web no momento.", "action": "none"}
 
     except requests.exceptions.RequestException as e:
         print(f"Erro ao conectar com a API do Google Search: {e}")
-        return "Desculpe, estou com problemas para pesquisar na web agora. Pode ser um erro na sua chave ou no ID do CSE, ou o limite de requisições foi atingido."
+        return {"response": "Desculpe, estou com problemas para pesquisar na web agora. Pode ser um erro na sua chave ou no ID do CSE, ou o limite de requisições foi atingido.", "action": "none"}
     except Exception as e:
         print(f"Erro inesperado na pesquisa web: {e}")
-        return "Desculpe, houve um erro ao processar sua pesquisa na web."
+        return {"response": "Desculpe, houve um erro ao processar sua pesquisa na web.", "action": "none"}
+
+def get_latest_youtube_video(channel_name_input):
+    if not YOUTUBE_API_KEY:
+        return {"response": "Desculpe, a funcionalidade do YouTube não está configurada corretamente.", "action": "none"}
+
+    channel_id = YOUTUBE_CHANNEL_IDS.get(channel_name_input.lower())
+
+    # Se o ID não estiver mapeado, tenta encontrar o canal pela API de Busca
+    if not channel_id:
+        print(f"Tentando buscar ID do canal '{channel_name_input}' via YouTube API...")
+        search_params = {
+            "key": YOUTUBE_API_KEY,
+            "q": channel_name_input,
+            "type": "channel",
+            "part": "snippet",
+            "maxResults": 1
+        }
+        try:
+            search_response = requests.get(YOUTUBE_BASE_URL, params=search_params)
+            search_response.raise_for_status()
+            search_data = search_response.json()
+            items = search_data.get("items")
+            if items:
+                channel_id = items[0]["id"]["channelId"]
+                print(f"ID do canal '{channel_name_input}' encontrado: {channel_id}")
+            else:
+                print(f"Não encontrei o canal '{channel_name_input}' na busca da API do YouTube.")
+                return {"response": f"Não consegui encontrar o canal '{channel_name_input}'. Por favor, verifique o nome ou tente um nome mais específico.", "action": "none"}
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao buscar ID do canal no YouTube API: {e}")
+            return {"response": "Desculpe, estou com problemas para acessar o YouTube agora para encontrar o canal.", "action": "none"}
+        except Exception as e:
+            print(f"Erro inesperado ao buscar ID do canal: {e}")
+            return {"response": "Desculpe, houve um erro ao processar a busca do canal no YouTube.", "action": "none"}
+
+    if not channel_id:
+        return {"response": f"Não consegui determinar o ID do canal para '{channel_name_input}'.", "action": "none"}
+
+    # Com o channel_id, busca o vídeo mais recente
+    params = {
+        "key": YOUTUBE_API_KEY,
+        "channelId": channel_id,
+        "part": "snippet",
+        "order": "date",
+        "type": "video",
+        "maxResults": 1
+    }
+
+    try:
+        response = requests.get(YOUTUBE_BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        videos = data.get("items")
+        if videos:
+            video = videos[0]["snippet"]
+            video_id = videos[0]["id"]["videoId"]
+            video_title = video.get("title", "Título indisponível")
+            channel_title = video.get("channelTitle", "Canal desconhecido")
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+            # Salva no contexto para a próxima resposta do usuário
+            context.set_context("youtube_redirect_pending", True)
+            context.set_context("youtube_video_url", video_url)
+            context.set_context("youtube_video_title", video_title)
+
+            return {
+                "success": True,
+                "response": (f"Ah, tudo bem! Esse é o vídeo mais recente do **{channel_title}**, "
+                             f"seu nome é **{video_title}**. Você deseja ser redirecionado para o vídeo?"),
+                "action": "ask_for_youtube_redirect",
+                "video_url": video_url,
+                "video_title": video_title,
+                "channel_title": channel_title
+            }
+        else:
+            return {"response": f"Não encontrei vídeos recentes para o canal '{channel_name_input}'. O canal pode não ter vídeos públicos ou o nome está incorreto.", "action": "none"}
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao conectar com a API do YouTube para buscar vídeos: {e}")
+        return {"response": "Desculpe, estou com problemas para acessar o YouTube agora para buscar vídeos.", "action": "none"}
+    except Exception as e:
+        print(f"Erro inesperado ao buscar vídeo do YouTube: {e}")
+        return {"response": "Desculpe, houve um erro ao processar sua solicitação de vídeo.", "action": "none"}
+
 
 # --- FUNÇÕES DE INTERAÇÃO COM GOOGLE SHEETS ---
 
@@ -507,152 +666,114 @@ def add_row_to_sheet(spreadsheet_name, worksheet_name, row_data):
         print(f"Erro ao adicionar linha à planilha: {e}")
         return {"success": False, "message": f"Erro inesperado ao adicionar linha à planilha: {e}"}
 
-
 # Função para obter a resposta da IA
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
-    bot_response = "Desculpe, não entendi. Pode repetir?" # Resposta padrão caso nada seja ativado
+    
+    # --- Gerenciamento de Contexto para "Sim/Não" do YouTube ---
+    if context.get_context("youtube_redirect_pending"):
+        if "sim" in user_message_normalized:
+            video_url = context.get_context("youtube_video_url")
+            video_title = context.get_context("youtube_video_title")
+            context.clear_context() # Limpa todo o contexto após a decisão
+            return {
+                "response": f"Ótimo! Redirecionando para o vídeo '{video_title}'.",
+                "action": "redirect_to_youtube",
+                "url": video_url
+            }
+        elif "nao" in user_message_normalized or "não" in user_message_normalized:
+            context.clear_context() # Limpa todo o contexto
+            return {"response": "Ok, entendi. Se precisar de mais alguma coisa, é só chamar!", "action": "none"}
+        else:
+            return {"response": "Desculpe, não entendi sua resposta. Você gostaria de ser redirecionado para o vídeo (sim/não)?", "action": "ask_for_youtube_redirect"}
+    
+    # --- Lógica para YouTube (Vídeo Mais Recente) ---
+    youtube_triggers = ["lancou video do", "qual e o video mais recente do"]
+    for trigger in youtube_triggers:
+        if user_message_normalized.startswith(trigger):
+            youtuber_name = user_message[len(trigger):].strip()
+            if youtuber_name:
+                video_info = get_latest_youtube_video(youtuber_name)
+                # get_latest_youtube_video já retorna o dicionário formatado
+                if video_info.get("success"):
+                    # Se for sucesso, já setamos o contexto dentro de get_latest_youtube_video e a resposta já está pronta
+                    return video_info 
+                else:
+                    return video_info # Retorna o erro direto da função
+            else:
+                return {"response": "De qual youtuber você gostaria de saber o vídeo mais recente?", "action": "none"}
 
     # --- Lógica para o Clima ---
     if "clima" in user_message_normalized or "previsao do tempo" in user_message_normalized:
         city = None
-        if "em " in user_message_normalized:
-            parts = user_message_normalized.split("em ")
-            if len(parts) > 1:
-                city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
-        elif "para " in user_message_normalized:
-            parts = user_message_normalized.split("para ")
-            if len(parts) > 1:
-                city = parts[1].strip().split("?")[0].split(".")[0].split("!")[0]
-        bot_response = get_weather_info(city)
+        match_city = re.search(r'(?:em|para)\s+([a-zA-ZáéíóúÁÉÍÓÚçÇ\s]+)', user_message_normalized)
+        if match_city:
+            city = match_city.group(1).strip()
+        
+        return get_weather_info(city)
 
-    # --- Lógica para Notícias de Entretenimento ---
+    # --- Placar de Jogos ("quanto foi") ---
+    if user_message_normalized.startswith("quanto foi "):
+        query_game_score = user_message[len("quanto foi "):].strip()
+        full_query = f"{query_game_score} placar resultados jogo"
+        return search_web(full_query)
+
+    # --- Notícias de Entretenimento ---
     news_keywords = ["noticias", "notícias", "ultimas noticias", "ultimas notícias", "novidades"]
     entertainment_topics = ["filmes", "series", "séries", "jogos", "games", "musica", "música", "celebridades", "cultura pop"]
-
     is_news_query = any(keyword in user_message_normalized for keyword in news_keywords)
-
-    if is_news_query and bot_response == "Desculpe, não entendi. Pode repetir?": # Garante que não sobrescreva uma intenção já ativada
+    if is_news_query:
         topic = None
         for et_topic in entertainment_topics:
             if et_topic in user_message_normalized:
                 topic = et_topic
                 break
-        bot_response = get_entertainment_news(topic)
+        return get_entertainment_news(topic)
+    
+    # --- Datas de Lançamento / Pesquisa na Web ("quando vai", "que ano lança", "data de lançamento") ---
+    launch_date_triggers = ["quando vai", "que ano lanca o", "data de lancamento"]
+    for trigger in launch_date_triggers:
+        if user_message_normalized.startswith(trigger):
+            query_for_search = user_message[len(trigger):].strip()
+            if query_for_search:
+                return search_web(query_for_search + " data de lançamento")
+            else:
+                return {"response": "Você gostaria de saber a data de lançamento de quê?", "action": "none"}
 
-
-    # --- Lógica para "me fale sobre" (PRIORIDADE ALTA, para tópicos conhecidos) ---
+    # --- "me fale sobre" (tópicos conhecidos ou busca na web) ---
     if user_message_normalized.startswith("me fale sobre "):
         query_for_search = user_message[len("me fale sobre "):].strip()
-        known_topics = [
-            "tecnologia", "ia", "machine learning", "musica", "arte", "esportes",
-            "jesus", "deus", "politica", "economia", "ciencia", "historia do brasil",
-            "voce"
-        ]
         query_normalized_for_check = normalize_text(query_for_search)
-
-        is_known_topic = False
-        for k_topic in known_topics:
-            if k_topic in query_normalized_for_check:
-                is_known_topic = True
+        
+        found_in_responses = False
+        for k_topic in responses.keys(): # Iterar sobre as chaves normalizadas
+            if normalize_text(k_topic).startswith(query_normalized_for_check):
+                if responses[k_topic]: # Verifica se a lista de respostas não está vazia
+                    return {"response": random.choice(responses[k_topic]), "action": "none"}
+                # Se a lista estiver vazia, pode tentar uma busca na web ou fallback
+                # Por exemplo, "me fale sobre o clima" estava vazio e agora é tratado pela função de clima.
+                found_in_responses = True
                 break
-
-        if not is_known_topic:
-            bot_response = search_web(query_for_search)
-        # Se for um tópico conhecido, o código continuará para as respostas fixas abaixo,
-        # ou será tratado se tiver sido a primeira intenção ativada (e.g. clima)
+        
+        if not found_in_responses: # Se não encontrou uma resposta interna, tente a web
+            return search_web(query_for_search)
 
 
-    # --- Lógica para Outras Pesquisas na Web (Google Custom Search) ---
-    search_triggers_web = [
-        "quando vai ",
-        "que ano lança ",
-        "data de lançamento ",
-        "qual ",
-        "quando ",
-        "quem é ",
-        "o que é ",
-        "onde é "
-    ]
-    search_triggers_web.sort(key=len, reverse=True)
+    # --- Outras Respostas Rápidas e Diálogos Temáticos ---
+    # (Prioridade para as chaves maiores para evitar correspondências parciais indesejadas)
+    sorted_responses_keys = sorted(responses.keys(), key=len, reverse=True)
+    for key in sorted_responses_keys:
+        if normalize_text(key) in user_message_normalized and responses[key]:
+            return {"response": random.choice(responses[key]), "action": "none"}
 
-    for trigger in search_triggers_web:
-        if user_message_normalized.startswith(trigger) and bot_response == "Desculpe, não entendi. Pode repetir?": # Garante que não sobrescreva
-            query_for_search = user_message[len(trigger):].strip()
-            search_result = search_web(query_for_search)
+    sorted_dialogues_keys = sorted(dialogues.keys(), key=len, reverse=True)
+    for key in sorted_dialogues_keys:
+        if normalize_text(key) in user_message_normalized and dialogues[key]:
+            return {"response": random.choice(dialogues[key]), "action": "none"}
 
-            if trigger == "quando vai ":
-                bot_response = "Entendo sua questão, segundo meus dados, segue uma analise: " + search_result
-            else:
-                bot_response = search_result
-            break # Importante para sair do loop uma vez que um gatilho é ativado
-
-
-    # --- Busca em respostas rápidas e diálogos temáticos (se nenhuma API ou FAQ foi ativada) ---
-    if bot_response == "Desculpe, não entendi. Pode repetir?": # Se ainda não encontrou resposta
-        for key in responses:
-            if key in user_message_normalized:
-                bot_response = random.choice(responses[key])
-                break # Sai do loop assim que encontra uma resposta
-
-    if bot_response == "Desculpe, não entendi. Pode repetir?": # Se ainda não encontrou resposta
-        for tema, lista in dialogues.items():
-            if tema.lower() in user_message_normalized:
-                bot_response = random.choice(lista)
-                break
-
-    # --- NOVO: Lógica para Salvar Interações no Google Sheets (Descomente para ativar) ---
-    if gs_client:
-        try:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # Exemplo: descomente e substitua os nomes da planilha/aba
-            # print(add_row_to_sheet("NomeDaSuaPlanilhaDeLog", "Interacoes", [timestamp, user_message, bot_response]))
-        except Exception as e:
-            print(f"Erro ao logar interação na planilha: {e}")
-
-    return bot_response # Retorna a resposta final do bot
-
-# --- Google Sheets Auth ---
-def get_sheets_client():
-    credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-    if credentials_json_str:
-        try:
-            credentials_info = json.loads(credentials_json_str)
-            gc = gspread.service_account_from_dict(credentials_info)
-            print("Google Sheets: Autenticado via variável de ambiente.")
-        except json.JSONDecodeError as e:
-            print(f"ERRO: Variável de ambiente GOOGLE_SHEETS_CREDENTIALS não é um JSON válido: {e}")
-            return None
-        except Exception as e:
-            print(f"ERRO ao autenticar o Google Sheets via variável de ambiente: {e}")
-            return None
-    else:
-        try:
-            # Nome do arquivo JSON da credencial. Confirme se é EXATAMENTE este nome.
-            gc = gspread.service_account(filename='chatboy-463619-b295229e68c6.json')
-            # Mensagem de print ajustada para refletir o nome do arquivo correto
-            print("Google Sheets: Autenticado via arquivo local 'chatboy-463619-b295229e68c6.json'.")
-        except FileNotFoundError:
-            # Mensagem de erro ajustada para refletir o nome do arquivo correto
-            print("ERRO: O arquivo 'chatboy-463619-b295229e68c6.json' não foi encontrado. "
-                  "Verifique se o nome está correto e se ele está no diretório raiz.")
-            return None
-        except Exception as e:
-            print(f"ERRO ao autenticar o Google Sheets via arquivo local: {e}")
-            return None
-    return gc
-
-# Inicializa o cliente do Google Sheets uma vez ao iniciar a aplicação
-gs_client = get_sheets_client()
-if not gs_client:
-    print("AVISO: O cliente do Google Sheets não pôde ser inicializado. Funções relacionadas não funcionarão.")
-
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.get_json()
-    user_message = data.get("message", "")
-    response = get_response(user_message)
-    return jsonify({"response": response})
+    # --- Resposta Padrão se nenhuma condição for atendida ---
+    default_responses = dialogues["ajuda"] + dialogues["Saudacao"] # Usa algumas respostas comuns
+    return {"response": random.choice(default_responses), "action": "none"}
 
 # --- Upload Excel endpoint ---
 UPLOAD_FOLDER = 'uploads'
@@ -664,7 +785,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/upload_excel', methods=['POST'])
-def upload_excel():
+def upload_excel_route(): # Renomeado para evitar conflito com 'upload_excel' de pandas
     if 'file' not in request.files:
         return jsonify({'error': 'Nenhum arquivo enviado.'}), 400
     file = request.files['file']
@@ -678,24 +799,27 @@ def upload_excel():
             file.save(filepath) # Salva o arquivo temporariamente
             df = pd.read_excel(filepath) # Lê o arquivo Excel com pandas
         except Exception as e:
-            # Se ocorrer um erro na leitura ou salvamento, remove o arquivo e retorna erro
             if os.path.exists(filepath):
                 os.remove(filepath)
             return jsonify({'error': f'Erro ao ler o arquivo Excel: {e}'}), 400
         
         if not gs_client:
-            os.remove(filepath) # Remove o arquivo temporário mesmo em erro
+            if os.path.exists(filepath):
+                os.remove(filepath) # Remove o arquivo temporário mesmo em erro
             return jsonify({'error': 'Google Sheets não autenticado. Verifique suas credenciais.'}), 500
         
         try:
-            # Cria uma nova planilha no Google Sheets com um nome baseado no arquivo
-            # Adiciona timestamp para garantir nomes únicos e evitar conflitos
+            # Opção 1: Criar uma nova planilha no Google Sheets com um nome baseado no arquivo + timestamp
+            # Isso é mais seguro para evitar sobrescrever dados
             sheet_title = f'Upload_{filename.replace(".", "_")}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
             sh = gs_client.create(sheet_title)
             worksheet = sh.sheet1 # Pega a primeira aba da nova planilha
             
+            # Opção 2 (Alternativa): Atualizar uma planilha existente pelo nome/ID e aba
+            # Se você quiser atualizar uma específica, o usuário precisaria enviar o ID/Nome da planilha e da aba
+            # Por simplicidade e segurança, a criação de uma nova é mais direta para uploads.
+
             # Converte o DataFrame para uma lista de listas (incluindo cabeçalhos) para upload
-            # Pandas para lista: df.values.tolist() para dados, df.columns.values.tolist() para cabeçalhos
             worksheet.update([df.columns.values.tolist()] + df.values.tolist())
             
             sheet_url = sh.url # Pega a URL da nova planilha criada
@@ -705,10 +829,21 @@ def upload_excel():
             return jsonify({'error': f'Erro ao criar ou preencher planilha no Google Sheets: {e}'}), 500
         
         # Remove o arquivo temporário após o upload bem-sucedido
-        os.remove(filepath)
+        if os.path.exists(filepath):
+            os.remove(filepath)
         return jsonify({'message': 'Arquivo enviado e planilha criada com sucesso!', 'sheet_url': sheet_url})
     else:
         return jsonify({'error': 'Tipo de arquivo não suportado. Apenas .xlsx e .xls são permitidos.'}), 400
 
+# --- Rota de Chat Principal ---
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    user_message = data.get("message", "")
+    
+    # get_response agora sempre retorna um dicionário JSON pronto
+    response_data = get_response(user_message)
+    return jsonify(response_data)
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True) # Adicionado debug=True para desenvolvimento
