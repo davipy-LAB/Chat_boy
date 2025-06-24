@@ -443,7 +443,7 @@ def search_web(query):
         "q": query,
         "num": 5,
         "hl": "pt",
-        # "dateRestrict": "y1" # Remova ou comente esta linha, ela pode estar limitando a um ano
+        # "dateRestrict": "y1"
     }
 
     try:
@@ -455,7 +455,7 @@ def search_web(query):
         if items:
             best_match_info = None
             earliest_future_date = None
-            
+
             # Usar o fuso horário de São Paulo para consistência
             tz_br = pytz.timezone('America/Sao_Paulo')
             current_date_br = datetime.now(tz_br).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -482,18 +482,21 @@ def search_web(query):
                     month_name = match_data_completa.group(2)
                     year = int(match_data_completa.group(3))
                     try:
-                        parsed_date = datetime(year, meses.get(month_name.lower(), 1), day)
+                        naive_date = datetime(year, meses.get(month_name.lower(), 1), day)
+                        parsed_date = tz_br.localize(naive_date)
                         found_date_str = match_data_completa.group(0)
                     except ValueError:
                         pass
                 elif match_mes_ano:
                     month_name = match_mes_ano.group(1)
                     year = int(match_mes_ano.group(2))
-                    parsed_date = datetime(year, meses.get(month_name.lower(), 1), 1)
+                    naive_date = datetime(year, meses.get(month_name.lower(), 1), 1)
+                    parsed_date = tz_br.localize(naive_date)
                     found_date_str = match_mes_ano.group(0)
                 elif match_ano:
                     year = int(match_ano.group(1))
-                    parsed_date = datetime(year, 1, 1)
+                    naive_date = datetime(year, 1, 1)
+                    parsed_date = tz_br.localize(naive_date)
                     found_date_str = match_ano.group(0)
 
                 # Comparar com a data atual no fuso horário correto
@@ -507,10 +510,10 @@ def search_web(query):
                             "date_str": found_date_str,
                             "parsed_date": parsed_date
                         }
-            
+
             if best_match_info:
                 clean_query_for_response = query.replace('que ano lança o ', '').replace('data de lançamento ', '').strip()
-                
+
                 # Formata a data para a resposta de forma mais legível
                 if best_match_info['parsed_date'].day != 1 or best_match_info['parsed_date'].month != 1:
                     formatted_date_response = best_match_info['parsed_date'].strftime("%d de %B de %Y")
@@ -521,7 +524,7 @@ def search_web(query):
 
                 return {"response": (f"Pelo que encontrei, a previsão de lançamento para '{clean_query_for_response}' é em **{formatted_date_response}**. "
                                      f"Mais detalhes: {best_match_info['link']}"), "action": "none"}
-            
+
             if items:
                 first_relevant_snippet = items[0].get('snippet', '')
                 first_relevant_title = items[0].get('title', '')
