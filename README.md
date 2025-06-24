@@ -9,7 +9,7 @@ O *ChatBoy* é uma assistente virtual desenvolvida 100% do zero, com uma *engine
 
 ## 🧠 Como funciona o ChatBoy?
 
-O ChatBoy foi projetado com um sistema próprio de *Processamento de Linguagem Natural (NLP). Embora não tenha a complexidade de modelos como o GPT-4o, ele é baseado em **contexto*, através das funções context() e get_response().
+O ChatBoy foi projetado com um sistema próprio de *Processamento de Linguagem Natural* (NLP). Embora não tenha a complexidade de modelos como o GPT-4o, ele é baseado em *contexto*, através das funções context() e get_response().
 
 Por exemplo:  
 Se context() identificar a trigger "quando vai", ele ativa o get_response() e chama a *API necessária* com base na intenção da pergunta do usuário.
