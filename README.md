@@ -61,7 +61,7 @@ Essa funcionalidade torna o ChatBoy *extremamente útil no dia a dia*, mantendo 
 
 ## 🚀 Atualizações frequentes
 
-- ✅ *+61 commits no Git*
+- ✅ *+59 commits no Git*
 - ✅ *+50 deploys realizados*
 - 🗓 Projeto iniciado em *abril de 2025*.
 - Atualizações constantes com novos recursos e melhorias.
@@ -85,7 +85,7 @@ Acesse agora a *versão base online*:
 - Flask (utilizado no ChatBoy)
 - UX, UI
 - GML
-- NPL, ML (Machine Learning)
+- NLP, ML (Machine Learning)
 
 O ChatBoy representa seu projeto mais ambicioso até agora, com toda a lógica e estrutura *desenvolvidas 100% manualmente*.
 
