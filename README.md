@@ -73,6 +73,29 @@ Essa funcionalidade torna o ChatBoy *extremamente útil no dia a dia*, mantendo 
 
 ---
 
+### 🕹 5. Compatibilidade universal
+
+O ChatBoy é leve e altamente otimizado, rodando até mesmo em navegadores com suporte limitado:
+
+✅ PCs e notebooks (qualquer sistema)
+
+✅ Dispositivos móveis (Android, iOS)
+
+✅ Navegadores de Smart TVs
+
+✅ PlayStation 4 (confirmado via navegador do console!)
+
+
+> 🧪 Testado com sucesso no navegador do PS4, com todas as funções principais operando corretamente, inclusive as APIs de clima, YouTube e pesquisa.
+
+![NAVEGADOR PS4 - MODO JANELA](https://github.com/user-attachments/assets/6022fd8d-54e3-47b8-ab03-6798d243d42a)
+
+![NAVEGADOR PS4 - TELA CHEIA](https://github.com/user-attachments/assets/64c73f0e-bfb9-4fcd-a15f-6ecbe53327c9)
+
+
+
+---
+
 ## 🚀 Atualizações frequentes
 
 - ✅ *+75 commits no Git*
