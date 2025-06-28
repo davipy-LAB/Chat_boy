@@ -416,3 +416,37 @@ body {
 #uploadForm input[type="file"] {
     display: none;
 }
+
+/* Animação para mensagens do usuário (da direita para o centro) */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(60px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* Animação para mensagens do bot (da esquerda para o centro) */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-60px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.chat-message.user {
+    /* ...existing styles... */
+    animation: slideInRight 0.35s cubic-bezier(.4,1.7,.7,1) both;
+}
+
+.chat-message.bot {
+    /* ...existing styles... */
+    animation: slideInLeft 0.35s cubic-bezier(.4,1.7,.7,1) both;
+}
