@@ -131,4 +131,5 @@ O ChatBoy representa seu projeto mais ambicioso até agora, com toda a lógica e
 📫 Entre em contato, contribua ou confira outros projetos no portfólio
 Contato: https://www.linkedin.com/in/davi-dias-de-souza-5337872a6/
 
-Chave pix para apoio financeiro: chatboy0800@gmail.com
+☕ Curtiu o projeto? Considere apoiar com um PIX:
+📩 chatboy0800@gmail.com
