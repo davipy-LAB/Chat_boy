@@ -99,7 +99,7 @@ dialogues = {
         "Oi! Como posso te ajudar? 😊",
         "Olá! Tudo bem?",
         "Seja bem-vindo! Como posso ajudar hoje?",
-        "Meu nome é ChatGuy, seu assistente virtual!"
+        "Meu nome é ChatBoy, seu assistente virtual!"
     ],
     "despedida": [
         "Tchau! Volte sempre! 👋",
