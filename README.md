@@ -31,7 +31,7 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 > "Qual é o clima da Alemanha agora?"  
 > → "O clima atual da Alemanha é de 14°C com sensação térmica de 12°C."
 
-![Imagem do WhatsApp de 2025-06-28 à(s) 09 02 37_527fd20a](https://github.com/user-attachments/assets/70783a77-b451-4da3-929c-07619608df63)
+![FOTO DEMO WEATHER API FUNCTION ](https://github.com/user-attachments/assets/70783a77-b451-4da3-929c-07619608df63)
 
 
 ---
@@ -42,6 +42,9 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 - Retorna o vídeo mais recente do canal especificado.
 - Pergunta ao usuário se deseja ser redirecionado.
 - Funciona em dispositivos móveis e PC.
+
+![FOTO DEMO YT FUNCTION](https://github.com/user-attachments/assets/78cc8611-aaa3-4f74-b93e-390987bfde1e)
+
 
 ---
 
