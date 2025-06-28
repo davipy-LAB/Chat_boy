@@ -14,6 +14,9 @@ O ChatBoy foi projetado com um sistema próprio de *Processamento de Linguagem N
 Por exemplo:  
 Se context() identificar a trigger "quando vai", ele ativa o get_response() e chama a *API necessária* com base na intenção da pergunta do usuário.
 
+![Imagem do WhatsApp de 2025-06-28 à(s) 08 31 33_44f3f61b](https://github.com/user-attachments/assets/ce00f509-6a8f-49fe-940d-aa578b8077da)
+
+
 ---
 
 ## ⚙ Funcionalidades
