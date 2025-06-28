@@ -1,16 +1,17 @@
-/* Definições para o elemento raiz HTML e o Body */
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background-color: #0d1117;
-    background-size: 400% 400%;
-    animation: gradientMove 15s ease infinite;
-    filter: contrast(120%) brightness(100%);
-    overflow-x: hidden;
+/* Google Fonts: Inter para texto, Poppins para headers */
+
+html, body, body, .chat, .chat-body, .chat-message, .chat-input, .chat-input input, .chat-input button, .sidebar, .sidebar-body, .sidebar-footer, .message-content {
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
-/* Estilos para o tsparticles */
+.chat-header,
+.sidebar h1,
+.sidebar-header {
+    font-family: 'Poppins', 'Inter', Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
 #tsparticles {
   position: absolute;
   top: 0;
@@ -33,6 +34,7 @@ body {
     align-items: center;
     min-height: 100vh;
     color: #fff;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .text {
@@ -52,6 +54,7 @@ body {
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease-in-out, background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     z-index: 10;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .sidebar:hover {
@@ -62,33 +65,38 @@ body {
     color: #fff;
     text-decoration: none;
     font-weight: bold;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .sidebar a:hover {
     text-decoration: underline;
 }
 
-.sidebar h1 {
+.sidebar h1,
+.chat-header {
     color: #fff;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Poppins', 'Inter', Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    letter-spacing: 1px;
 }
+
 .sidebar-header {
     text-align: center;
     font-size: 20px;
     font-weight: bold;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Poppins', 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .sidebar-body p {
     margin-top: 10px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
     font-size: 16px;
     color: #acabab;
 }
 
 .sidebar-body {
     margin-top: 20px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
     font-size: 16px;
     color: #333;
 }
@@ -97,7 +105,7 @@ body {
     position: absolute;
     bottom: 20px;
     left: 20px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
     font-size: 12px;
     color: #888;
     z-index: 10;
@@ -117,25 +125,27 @@ body {
     width: 100%;
     max-width: 480px;
     height: 80vh;
-    background-color: #1e1e2f;
+    background-color: #13131a;
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     margin: 0 auto;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 /* Header do chat */
 .chat-header {
-    background-color: #13083a;
+    background-color: #181c2f;
     color: #ffffff;
     padding: 16px;
     text-align: center;
-    font-size: 20px;
-    font-weight: 600;
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 0.9rem; /* DIMINUI O HEADER NO PC */
+    font-family: 'Poppins', 'Inter', Arial, Helvetica, sans-serif;
+    font-weight: 700;
     flex-shrink: 0;
+    letter-spacing: 1px;
 }
 
 /* Área de mensagens */
@@ -146,6 +156,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 /* Mensagens */
@@ -156,32 +167,30 @@ body {
     line-height: 1.5;
     max-width: 80%;
     word-wrap: break-word;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Mensagem do usuário */
 .chat-message.user {
-    background-color: #2d2d44;
+    background-color: #204060;
     color: #ffffff;
     align-self: flex-end;
 }
 
-/* Mensagem da IA */
 .chat-message.bot {
-    background-color: #3b3b5b;
+    background-color: #1a1a28;
     color: #ffffff;
     align-self: flex-start;
 }
 
-/* Input da mensagem */
 .chat-input {
     padding: 12px;
     display: flex;
     align-items: center;
-    background-color: #2a2a3d;
-    border-top: 1px solid #444;
+    background-color: #181828;
+    border-top: 1px solid #22223a;
     gap: 10px;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .chat-input input {
@@ -192,10 +201,12 @@ body {
     background-color: #1e1e2f;
     color: #fff;
     font-size: 16px;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .chat-input input::placeholder {
     color: #aaa;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .chat-input input:focus {
@@ -212,6 +223,7 @@ body {
     font-size: 16px;
     cursor: pointer;
     transition: background 0.3s ease, transform 0.2s ease;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .chat-input button:hover {
@@ -221,18 +233,19 @@ body {
 
 .chat-message.user .message-content {
     text-align: left;
-    font-weight: bold;
-    font: 1em system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-weight: 600;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .chat-message.bot .message-content {
-    text-align: flex-end;
-    font-weight: bold;
-    font: 1em system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    text-align: left;
+    font-weight: 600;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 .message-content {
-    font: 1em system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', Arial, Helvetica, sans-serif;
+    font-size: 1em;
 }
 
 /* --- ESTILOS DO OVERLAY --- */
@@ -255,40 +268,35 @@ body {
 }
 
 /* --- MEDIA QUERIES PARA RESPONSIVIDADE --- */
-
-/* Telas menores (tablets e celulares grandes) - até 768px */
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
         width: 250px;
         box-shadow: none;
     }
-
     .sidebar.active {
         transform: translateX(0);
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
     }
-
     .menu-button {
         display: none !important;
     }
-
     .container {
         width: 100%;
         height: 100vh;
     }
-
     .chat {
         width: 90%;
         max-width: 500px;
         height: 90vh;
         border-radius: 10px;
     }
-
     .chat-body {
         height: calc(90vh - 120px);
     }
-
+    .chat-header {
+        font-size: 1.5rem;
+    }
     .chat-input {
         flex-direction: row !important;
         align-items: center;
@@ -312,35 +320,32 @@ body {
     }
 }
 
-/* Telas MUITO pequenas (celulares pequenos) - até 480px */
 @media (max-width: 480px) {
     .chat {
         width: 98%;
         border-radius: 10px;
         height: 95vh;
     }
-
     .chat-body {
         height: calc(95vh - 120px);
     }
-
     .chat-message {
         font-size: 0.9rem;
         padding: 8px;
     }
-
     .sidebar {
         width: 180px;
         transform: translateX(-100%);
         padding: 10px;
         box-shadow: none;
     }
-
     .sidebar.active {
         transform: translateX(0);
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
     }
-
+    .chat-header {
+        font-size: 1.1rem;
+    }
     .chat-input {
         flex-direction: row !important;
         align-items: center;
@@ -353,14 +358,12 @@ body {
     }
 }
 
-/* Telas menores que 360px (smartphones muito pequenos) */
 @media (max-width: 360px) {
     .chat {
         width: 100%;
         height: 100vh;
         border-radius: 0;
     }
-
     .chat-header, .chat-message, .chat-input input, .chat-input button {
         font-size: 14px;
     }
@@ -377,7 +380,6 @@ body {
 }
 
 /* CSS Botâo de upload */
-/* Botão de upload de Excel com ícone, redondo e à esquerda do input */
 #uploadForm {
     display: flex;
     align-items: center;

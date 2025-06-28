@@ -167,7 +167,7 @@ responses = {
     "te odeio": ["Sinto muito se te decepcionei. O que posso fazer para melhorar?", "Estou aqui para ajudar, não para causar raiva."],
     "oi": ["Olá! Como posso te ajudar?", "Oi! Tudo bem?"],
     "como voce esta": ["Estou bem, obrigado! E você?", "Estou ótimo! 😊"],
-    "qual e seu nome": ["Meu nome é ChatGuy!", "Sou o ChatGuy, seu assistente virtual!"],
+    "qual e seu nome": ["Meu nome é ChatBoy!", "Sou o ChatBoy, seu assistente virtual!"],
     "adeus": ["Até logo!", "Tchau! Volte sempre!"],
     "qual e sua idade": ["Eu nasci em 2025, ainda estou crescendo!", "Tenho poucos meses de vida digital!"],
     "qual e sua comida favorita": ["Adoro pizza!", "Minha comida favorita é pizza!"],
@@ -443,7 +443,6 @@ def search_web(query):
         "q": query,
         "num": 5,
         "hl": "pt",
-        # "dateRestrict": "y1"
     }
 
     try:
@@ -453,86 +452,23 @@ def search_web(query):
 
         items = search_results.get("items")
         if items:
-            best_match_info = None
-            earliest_future_date = None
-
-            # Usar o fuso horário de São Paulo para consistência
-            tz_br = pytz.timezone('America/Sao_Paulo')
-            current_date_br = datetime.now(tz_br).replace(hour=0, minute=0, second=0, microsecond=0)
-
-            for item in items:
-                title = item.get("title", "")
+            markdown_results = []
+            for i, item in enumerate(items, 1):
+                title = item.get("title", "Sem título")
+                link = item.get("link", "#")
                 snippet = item.get("snippet", "")
-                link = item.get("link", "")
+                markdown_results.append(
+                    f"**{i}. [{title}]({link})**\n> {snippet}"
+                )
+            markdown_response = (
+                f"🔎 **Resultados para:** `{query}`\n\n"
+                + "\n\n".join(markdown_results)
+                + "\n\nSe quiser mais detalhes, clique nos títulos acima. 😊"
+            )
+            return {"response": markdown_response, "action": "none"}
 
-                match_data_completa = re.search(r'(\d{1,2}) de (janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro) de (\d{4})', snippet, re.IGNORECASE)
-                match_mes_ano = re.search(r'(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s*(?:de)?\s*(\d{4})', snippet, re.IGNORECASE)
-                match_ano = re.search(r'\b(20[2-3][0-9])\b', snippet)
-
-                found_date_str = None
-                parsed_date = None
-
-                meses = {
-                    'janeiro':1, 'fevereiro':2, 'março':3, 'abril':4, 'maio':5, 'junho':6,
-                    'julho':7, 'agosto':8, 'setembro':9, 'outubro':10, 'novembro':11, 'dezembro':12
-                }
-
-                if match_data_completa:
-                    day = int(match_data_completa.group(1))
-                    month_name = match_data_completa.group(2)
-                    year = int(match_data_completa.group(3))
-                    try:
-                        naive_date = datetime(year, meses.get(month_name.lower(), 1), day)
-                        parsed_date = tz_br.localize(naive_date)
-                        found_date_str = match_data_completa.group(0)
-                    except ValueError:
-                        pass
-                elif match_mes_ano:
-                    month_name = match_mes_ano.group(1)
-                    year = int(match_mes_ano.group(2))
-                    naive_date = datetime(year, meses.get(month_name.lower(), 1), 1)
-                    parsed_date = tz_br.localize(naive_date)
-                    found_date_str = match_mes_ano.group(0)
-                elif match_ano:
-                    year = int(match_ano.group(1))
-                    naive_date = datetime(year, 1, 1)
-                    parsed_date = tz_br.localize(naive_date)
-                    found_date_str = match_ano.group(0)
-
-                # Comparar com a data atual no fuso horário correto
-                if parsed_date and parsed_date.replace(hour=0, minute=0, second=0, microsecond=0) >= current_date_br:
-                    if earliest_future_date is None or parsed_date < earliest_future_date:
-                        earliest_future_date = parsed_date
-                        best_match_info = {
-                            "title": title,
-                            "snippet": snippet,
-                            "link": link,
-                            "date_str": found_date_str,
-                            "parsed_date": parsed_date
-                        }
-
-            if best_match_info:
-                clean_query_for_response = query.replace('que ano lança o ', '').replace('data de lançamento ', '').strip()
-
-                # Formata a data para a resposta de forma mais legível
-                if best_match_info['parsed_date'].day != 1 or best_match_info['parsed_date'].month != 1:
-                    formatted_date_response = best_match_info['parsed_date'].strftime("%d de %B de %Y")
-                elif best_match_info['parsed_date'].month != 1:
-                    formatted_date_response = best_match_info['parsed_date'].strftime("%B de %Y")
-                else:
-                    formatted_date_response = best_match_info['parsed_date'].strftime("%Y")
-
-                return {"response": (f"Pelo que encontrei, a previsão de lançamento para '{clean_query_for_response}' é em **{formatted_date_response}**. "
-                                     f"Mais detalhes: {best_match_info['link']}"), "action": "none"}
-
-            if items:
-                first_relevant_snippet = items[0].get('snippet', '')
-                first_relevant_title = items[0].get('title', '')
-                first_relevant_link = items[0].get('link', '')
-                return {"response": (f"Não encontrei uma data de lançamento exata ou futura imediata, mas achei isto: "
-                                     f"'{first_relevant_snippet}' (Fonte: {first_relevant_title}). Veja mais: {first_relevant_link}"), "action": "none"}
-            else:
-                return {"response": "Não encontrei resultados para a sua pesquisa na web no momento.", "action": "none"}
+        else:
+            return {"response": "Não encontrei resultados para a sua pesquisa na web no momento.", "action": "none"}
 
     except requests.exceptions.RequestException as e:
         print(f"Erro ao conectar com a API do Google Search: {e}")
@@ -540,7 +476,6 @@ def search_web(query):
     except Exception as e:
         print(f"Erro inesperado na pesquisa web: {e}")
         return {"response": "Desculpe, houve um erro ao processar sua pesquisa na web.", "action": "none"}
-
 def get_latest_youtube_video(channel_name_input):
     if not YOUTUBE_API_KEY:
         return {"response": "Desculpe, a funcionalidade do YouTube não está configurada corretamente.", "action": "none"}
