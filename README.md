@@ -18,7 +18,6 @@ Por exemplo:
 Se context() identificar a trigger "quando vai", ele ativa o get_response() e chama a *API necessária* com base na intenção da pergunta do usuário.
 
 
-
 ---
 
 ## ⚙ Funcionalidades
@@ -31,6 +30,9 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 *Exemplo:*  
 > "Qual é o clima da Alemanha agora?"  
 > → "O clima atual da Alemanha é de 14°C com sensação térmica de 12°C."
+
+![Imagem do WhatsApp de 2025-06-28 à(s) 09 02 37_527fd20a](https://github.com/user-attachments/assets/70783a77-b451-4da3-929c-07619608df63)
+
 
 ---
 
