@@ -5,6 +5,9 @@
 
 O *ChatBoy* é uma assistente virtual desenvolvida 100% do zero, com uma *engine autoral* baseada em *Flask, **Flask-CORS* e *random*. Sem utilizar modelos de IA prontos, ele traz funcionalidades práticas e uma estrutura modular, focada em experiências reais de uso.
 
+![Imagem do WhatsApp de 2025-06-28 à(s) 08 31 33_44f3f61b](https://github.com/user-attachments/assets/7e59f187-674e-4b71-a04f-c636211110db)
+
+
 ---
 
 ## 🧠 Como funciona o ChatBoy?
@@ -13,6 +16,8 @@ O ChatBoy foi projetado com um sistema próprio de *Processamento de Linguagem N
 
 Por exemplo:  
 Se context() identificar a trigger "quando vai", ele ativa o get_response() e chama a *API necessária* com base na intenção da pergunta do usuário.
+
+
 
 ---
 
