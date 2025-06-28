@@ -12,7 +12,7 @@ function addMessage(text, sender) {
 
     const messageText = document.createElement("p");
     messageText.classList.add("message-text");
-    messageText.innerHTML = text; // Usar innerHTML para permitir negrito (**) ou links
+    messageText.innerHTML = marked.parse(text); // Usar innerHTML para permitir negrito (**) ou links
 
     messageContent.appendChild(messageText);
     messageDiv.appendChild(messageContent);

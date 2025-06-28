@@ -607,14 +607,18 @@ def get_latest_youtube_video(channel_name_input):
             context.set_context("youtube_video_title", video_title)
 
             return {
-                "success": True,
-                "response": (f"Ah, tudo bem! Esse é o vídeo mais recente do **{channel_title}**, "
-                             f"seu nome é **{video_title}**. Você deseja ser redirecionado para o vídeo?"),
-                "action": "ask_for_youtube_redirect",
-                "video_url": video_url,
-                "video_title": video_title,
-                "channel_title": channel_title
-            }
+    "success": True,
+    "response": (
+        f"🎬 **Vídeo mais recente de [{channel_title}]({video_url})**\n\n"
+        f"**Título:** {video_title}\n\n"
+        f"🔗 [Assista agora]({video_url})\n\n"
+        f"Você deseja ser redirecionado para o vídeo?"
+    ),
+    "action": "ask_for_youtube_redirect",
+    "video_url": video_url,
+    "video_title": video_title,
+    "channel_title": channel_title
+}
         else:
             return {"response": f"Não encontrei vídeos recentes para o canal '{channel_name_input}'. O canal pode não ter vídeos públicos ou o nome está incorreto.", "action": "none"}
     except requests.exceptions.RequestException as e:
