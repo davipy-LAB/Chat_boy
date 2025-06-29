@@ -757,13 +757,15 @@ def allowed_file(filename):
 def dataframe_to_markdown_analysis(df):
     # Exemplo de análise: shape, colunas, tipos, amostra, estatísticas
     md = []
-    md.append(f"### 📊 Análise do Arquivo\n")
+    md.append(f"## 📊 Análise do Arquivo\n")
     md.append(f"- **Linhas:** {df.shape[0]}")
     md.append(f"- **Colunas:** {df.shape[1]}")
     md.append(f"- **Colunas:** {', '.join(df.columns)}\n")
-    md.append("#### Primeiras linhas:\n")
+    md.append("### Primeiras linhas:\n")
+    md.append("---\n")
     md.append(df.head(5).to_markdown(index=False))
-    md.append("\n#### Estatísticas descritivas:\n")
+    md.append("\n### Estatísticas descritivas:\n")
+    md.append("---\n")
     md.append(df.describe(include='all').to_markdown())
     return "\n".join(md)
 
