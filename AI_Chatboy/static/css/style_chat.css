@@ -450,3 +450,91 @@ body {
     /* ...existing styles... */
     animation: slideInLeft 0.35s cubic-bezier(.4,1.7,.7,1) both;
 }
+
+
+/* --- Markdown custom style para o chat --- */
+.message-content p,
+.message-content ul,
+.message-content ol,
+.message-content blockquote,
+.message-content pre,
+.message-content code,
+.message-content a,
+.message-content strong {
+    margin: 0 0 0.5em 0;
+    font-size: 1em;
+    line-height: 1.6;
+}
+
+.message-content strong {
+    color: #00ff99;
+    font-weight: 700;
+}
+
+.message-content em {
+    color: #ffb347;
+}
+
+.message-content a {
+    color: #4ea1ff;
+    text-decoration: underline;
+    word-break: break-all;
+    transition: color 0.2s;
+}
+.message-content a:hover {
+    color: #00ff99;
+}
+
+.message-content code {
+    background: #232336;
+    color: #ffb347;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.95em;
+    font-family: 'Fira Mono', 'Consolas', monospace;
+}
+
+.message-content pre {
+    background: #232336;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.95em;
+    font-family: 'Fira Mono', 'Consolas', monospace;
+}
+
+.message-content blockquote {
+    border-left: 4px solid #00ff99;
+    background: #181c2f;
+    color: #b0b0b0;
+    margin: 0.5em 0;
+    padding: 0.5em 1em;
+    border-radius: 6px;
+    font-style: italic;
+}
+
+.message-content ul,
+.message-content ol {
+    padding-left: 1.5em;
+}
+
+.message-content li {
+    margin-bottom: 0.3em;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+    color: #00ff99;
+    font-family: 'Poppins', 'Inter', Arial, Helvetica, sans-serif;
+    font-weight: 700;
+    margin: 0.5em 0 0.3em 0;
+    line-height: 1.2;
+}
+
+.message-content hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 1em 0;
+}

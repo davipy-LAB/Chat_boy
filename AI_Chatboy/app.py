@@ -611,6 +611,18 @@ def add_row_to_sheet(spreadsheet_name, worksheet_name, row_data):
 # Função para obter a resposta da IA
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
+
+    if user_message_normalized.endswith("e bom?"):
+        topic = user_message_normalized[:-len("e bom?")].strip()
+        query_for_search = f"{topic} é bom?"
+        result = search_web(query_for_search)
+    # Adiciona um título markdown bonito
+        if "response" in result:
+            result["response"] = (
+            f"## 🤔 {topic.title()} é bom?\n\n"
+            + result["response"]
+            )
+        return result
     
     # --- Gerenciamento de Contexto para "Sim/Não" do YouTube ---
     if context.get_context("youtube_redirect_pending"):
@@ -630,7 +642,7 @@ def get_response(user_message):
             return {"response": "Desculpe, não entendi sua resposta. Você gostaria de ser redirecionado para o vídeo (sim/não)?", "action": "ask_for_youtube_redirect"}
     
     # --- Lógica para YouTube (Vídeo Mais Recente) ---
-    youtube_triggers = ["lancou video do", "qual e o video mais recente do"]
+    youtube_triggers = ["lancou video do", "qual e o video mais recente do", "lancou video novo do", "qual o video mais novo do"]
     for trigger in youtube_triggers:
         if user_message_normalized.startswith(trigger):
             youtuber_name = user_message[len(trigger):].strip()
@@ -696,13 +708,11 @@ def get_response(user_message):
                 # Por exemplo, "me fale sobre o clima" estava vazio e agora é tratado pela função de clima.
                 found_in_responses = True
                 break
+    
         
         if not found_in_responses: # Se não encontrou uma resposta interna, tente a web
             return search_web(query_for_search)
 
-
-    # --- Outras Respostas Rápidas e Diálogos Temáticos ---
-    # (Prioridade para as chaves maiores para evitar correspondências parciais indesejadas)
     sorted_responses_keys = sorted(responses.keys(), key=len, reverse=True)
     for key in sorted_responses_keys:
         if normalize_text(key) in user_message_normalized and responses[key]:
