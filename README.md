@@ -44,7 +44,8 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 - Pergunta ao usuário se deseja ser redirecionado.
 - Funciona em dispositivos móveis e PC.
 
-![image](https://github.com/user-attachments/assets/89cb4c8c-492f-4306-88e7-e69609006493)
+![Imagem do WhatsApp de 2025-06-29 à(s) 14 05 18_6e5138fd](https://github.com/user-attachments/assets/67d7d41a-bce3-471e-bd6c-9165f54b8863)
+
 
 
 
