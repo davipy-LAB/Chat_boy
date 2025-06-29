@@ -44,7 +44,9 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 - Pergunta ao usuário se deseja ser redirecionado.
 - Funciona em dispositivos móveis e PC.
 
-![image](https://github.com/user-attachments/assets/8828e06c-00b7-4fb0-b0c0-f155e17693d1)
+![Imagem do WhatsApp de 2025-06-29 à(s) 14 05 18_6e5138fd](https://github.com/user-attachments/assets/67d7d41a-bce3-471e-bd6c-9165f54b8863)
+
+
 
 
 
@@ -62,14 +64,33 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 
 Essa funcionalidade torna o ChatBoy *extremamente útil no dia a dia*, mantendo o foco em entretenimento e informação.
 
-![image](https://github.com/user-attachments/assets/11739985-1a2c-4e2e-a34d-5608e5626519)
+![Imagem do WhatsApp de 2025-06-29 à(s) 14 06 06_05c93044](https://github.com/user-attachments/assets/7996df06-1168-4dd1-a687-a4b71050c1c5)
+
+
 
 ---
 
-### 🔬 4. Análise de arquivos CSV (em desenvolvimento)
-- Upload e leitura de arquivos .csv.
-- Leitura e interpretação dos dados para análise automatizada.
-- Atualmente em fase experimental.
+### 📊 Análise de Arquivos CSV/Excel
+
+A partir da versão v1.7.4, o ChatBoy passou a ter capacidade de análise de dados tabulares.
+Ao enviar um arquivo .csv ou .xlsx, o sistema realiza as seguintes etapas:
+
+Conversão e parsing via pandas
+
+Extração de colunas e linhas principais
+
+Cálculo de estatísticas descritivas (count, top, freq)
+
+Apresentação totalmente formatada em Markdown
+
+Compatível com dispositivos móveis, PCs e consoles
+
+
+Essa funcionalidade permite transformar arquivos de dados em insights visuais acessíveis e limpos em menos de 3 segundos.
+
+📸 Exemplo real abaixo:
+
+![Imagem do WhatsApp de 2025-06-29 à(s) 14 02 04_dcf66d06](https://github.com/user-attachments/assets/51b802ac-bdd8-42de-9ab6-0b14dd4f0c0f)
 
 ---
 
