@@ -66,11 +66,25 @@ Essa funcionalidade torna o ChatBoy *extremamente útil no dia a dia*, mantendo 
 
 ---
 
-### 🔬 4. Análise de arquivos CSV (em desenvolvimento)
-- Upload e leitura de arquivos .csv.
-- Leitura e interpretação dos dados para análise automatizada.
-- Atualmente em fase experimental.
+### 📊 Análise de Arquivos CSV/Excel
 
+A partir da versão v1.7.4, o ChatBoy passou a ter capacidade de análise de dados tabulares.
+Ao enviar um arquivo .csv ou .xlsx, o sistema realiza as seguintes etapas:
+
+Conversão e parsing via pandas
+
+Extração de colunas e linhas principais
+
+Cálculo de estatísticas descritivas (count, top, freq)
+
+Apresentação totalmente formatada em Markdown
+
+Compatível com dispositivos móveis, PCs e consoles
+
+
+Essa funcionalidade permite transformar arquivos de dados em insights visuais acessíveis e limpos em menos de 3 segundos.
+
+📸 Exemplo real abaixo:
 ---
 
 ### 🕹 5. Compatibilidade universal
