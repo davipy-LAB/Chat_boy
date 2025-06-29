@@ -169,15 +169,29 @@ window.addEventListener('resize', () => {
 
 document.getElementById('uploadForm').onsubmit = async function(e) {
     e.preventDefault();
+    // Adiciona mensagem de loading no chat
+    const loadingId = "upload-loading-" + Date.now();
+    addMessage('<span id="' + loadingId + '">Enviando arquivo...</span>', "bot");
+
     const formData = new FormData(this);
     const res = await fetch('/upload_excel', { method: 'POST', body: formData });
     const data = await res.json();
-    document.getElementById('uploadResult').innerText = data.message || data.error;
-    if(data.sheet_url) {
-        document.getElementById('uploadResult').innerHTML += `<br><a href="${data.sheet_url}" target="_blank" style="color:#00ff99;">Abrir planilha no Google Sheets</a>`;
+
+    // Remove o loading (procura a última mensagem bot com o id)
+    const loadingElem = document.getElementById(loadingId);
+    if (loadingElem && loadingElem.parentElement) {
+        loadingElem.parentElement.parentElement.parentElement.remove();
     }
-    // ADICIONE ESTA LINHA:
-    if(data.analysis) {
-        addMessage(data.analysis, "bot");
-    }
+
+    let md = '';
+    if(data.message) md += `${data.message}\n\n`;
+    if(data.sheet_url) md += `[Abrir planilha no Google Sheets](${data.sheet_url})\n\n`;
+    if(data.analysis) md += `${data.analysis}\n\n`;
+    if(data.error) md += `**Erro:** ${data.error}\n\n`;
+
+    addMessage(md, "bot");
+};
+// Upload automático ao selecionar arquivo
+document.getElementById('file').onchange = function() {
+    document.getElementById('uploadForm').dispatchEvent(new Event('submit'));
 };

@@ -157,6 +157,8 @@ body {
     flex-direction: column;
     gap: 12px;
     font-family: 'Inter', Arial, Helvetica, sans-serif;
+    overflow-y: auto;
+    max-width: 100%;
 }
 
 /* Mensagens */
@@ -537,4 +539,41 @@ body {
     border: none;
     border-top: 1px solid #333;
     margin: 1em 0;
+}
+
+.message-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+/* --- Estilo para tabelas dentro de mensagens --- */
+.message-text table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.95em;
+  background: #181c24;
+  color: #fff;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.message-text th,
+.message-text td {
+  border: 1px solid #333;
+  padding: 6px 10px;
+  text-align: left;
+  white-space: normal;        /* Permite quebra só entre palavras */
+  overflow-wrap: break-word;  /* Quebra só se necessário, mas não no meio da palavra */
+  word-break: normal;         /* Não quebra no meio da palavra */
+  max-width: 180px;           /* Limita a largura da célula */
+}
+
+.message-text th {
+  background: #22263a;
+  font-weight: bold;
+}
+
+.message-text tr:nth-child(even) {
+  background: #23273a;
 }
