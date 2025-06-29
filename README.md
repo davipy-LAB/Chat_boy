@@ -44,7 +44,8 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 - Pergunta ao usuário se deseja ser redirecionado.
 - Funciona em dispositivos móveis e PC.
 
-![image](https://github.com/user-attachments/assets/8828e06c-00b7-4fb0-b0c0-f155e17693d1)
+![image](https://github.com/user-attachments/assets/89cb4c8c-492f-4306-88e7-e69609006493)
+
 
 
 
@@ -62,7 +63,8 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 
 Essa funcionalidade torna o ChatBoy *extremamente útil no dia a dia*, mantendo o foco em entretenimento e informação.
 
-![image](https://github.com/user-attachments/assets/11739985-1a2c-4e2e-a34d-5608e5626519)
+![image](https://github.com/user-attachments/assets/8a0a6ed5-e0be-4088-80a8-e9540e3531cb)
+
 
 ---
 
@@ -85,6 +87,9 @@ Compatível com dispositivos móveis, PCs e consoles
 Essa funcionalidade permite transformar arquivos de dados em insights visuais acessíveis e limpos em menos de 3 segundos.
 
 📸 Exemplo real abaixo:
+
+![Imagem do WhatsApp de 2025-06-29 à(s) 14 02 04_dcf66d06](https://github.com/user-attachments/assets/51b802ac-bdd8-42de-9ab6-0b14dd4f0c0f)
+
 ---
 
 ### 🕹 5. Compatibilidade universal
