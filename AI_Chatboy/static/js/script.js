@@ -3,22 +3,17 @@ const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
 
 // Função para adicionar mensagens ao chat
-function addMessage(text, sender) {
+function addMessage(text, sender = "bot") {
+    const chatBody = document.getElementById("chatBody");
     const messageDiv = document.createElement("div");
-    messageDiv.classList.add("chat-message", sender);
-
-    const messageContent = document.createElement("div");
-    messageContent.classList.add("message-content");
-
-    const messageText = document.createElement("p");
-    messageText.classList.add("message-text");
-    messageText.innerHTML = marked.parse(text); // Usar innerHTML para permitir negrito (**) ou links
-
-    messageContent.appendChild(messageText);
-    messageDiv.appendChild(messageContent);
+    messageDiv.className = `chat-message ${sender}`;
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "message-content";
+    // Renderiza markdown
+    contentDiv.innerHTML = marked.parse(text);
+    messageDiv.appendChild(contentDiv);
     chatBody.appendChild(messageDiv);
-
-    chatBody.scrollTop = chatBody.scrollHeight; // Rolagem automática para a última mensagem
+    chatBody.scrollTop = chatBody.scrollHeight;
 }
 
 // Função para enviar a mensagem para o backend e obter a resposta
@@ -166,3 +161,18 @@ window.addEventListener('resize', () => {
         closeSidebar();
     }
 });
+
+document.getElementById('uploadForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const res = await fetch('/upload_excel', { method: 'POST', body: formData });
+    const data = await res.json();
+    document.getElementById('uploadResult').innerText = data.message || data.error;
+    if(data.sheet_url) {
+        document.getElementById('uploadResult').innerHTML += `<br><a href="${data.sheet_url}" target="_blank" style="color:#00ff99;">Abrir planilha no Google Sheets</a>`;
+    }
+    // ADICIONE ESTA LINHA:
+    if(data.analysis) {
+        addMessage(data.analysis, "bot");
+    }
+};

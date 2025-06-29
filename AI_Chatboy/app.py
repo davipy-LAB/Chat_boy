@@ -1,6 +1,7 @@
 import random
 import os
 import json
+from urllib import response
 import gspread
 from datetime import datetime
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ from google.oauth2.service_account import Credentials
 from werkzeug.utils import secure_filename
 import pandas as pd
 import pytz # Importar pytz para lidar com fusos horários
+from google.oauth2.service_account import Credentials
 
 app = Flask(__name__)
 CORS(app)
@@ -69,8 +71,24 @@ YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3/search"
 # --- Google Sheets Auth ---
 SHEET_ID = os.getenv('SHEET_ID')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = 'AI_Chatboy/credentials.json' # O nome do seu arquivo de credenciais.
+SERVICE_ACCOUNT_FILE = 'AI_Chatboy/credentials.json'
 
+gs_client = None
+try:
+    if os.path.exists(SERVICE_ACCOUNT_FILE):
+        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+        gs_client = gspread.authorize(creds)
+        print(f"Conexão com o Google Sheets estabelecida via arquivo: '{SERVICE_ACCOUNT_FILE}'.")
+    else:
+        credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
+        if credentials_json_str:
+            credentials_info = json.loads(credentials_json_str)
+            gs_client = gspread.service_account_from_dict(credentials_info)
+            print("Conexão com o Google Sheets estabelecida via variável de ambiente.")
+        else:
+            print("AVISO: Nem 'credentials.json' nem 'GOOGLE_SHEETS_CREDENTIALS' foram encontrados. Funções do Google Sheets não funcionarão.")
+except Exception as e:
+    print(f"ERRO: Não foi possível conectar ao Google Sheets. Verifique suas credenciais. Erro: {e}")
 gs_client = None
 try:
     # Preferimos o arquivo de credenciais se ele existir
@@ -729,12 +747,25 @@ def get_response(user_message):
 
 # --- Upload Excel endpoint ---
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
+ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Garante que a pasta 'uploads' exista
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def dataframe_to_markdown_analysis(df):
+    # Exemplo de análise: shape, colunas, tipos, amostra, estatísticas
+    md = []
+    md.append(f"### 📊 Análise do Arquivo\n")
+    md.append(f"- **Linhas:** {df.shape[0]}")
+    md.append(f"- **Colunas:** {df.shape[1]}")
+    md.append(f"- **Colunas:** {', '.join(df.columns)}\n")
+    md.append("#### Primeiras linhas:\n")
+    md.append(df.head(5).to_markdown(index=False))
+    md.append("\n#### Estatísticas descritivas:\n")
+    md.append(df.describe(include='all').to_markdown())
+    return "\n".join(md)
 
 @app.route('/upload_excel', methods=['POST'])
 def upload_excel_route(): # Renomeado para evitar conflito com 'upload_excel' de pandas
@@ -746,10 +777,21 @@ def upload_excel_route(): # Renomeado para evitar conflito com 'upload_excel' de
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
+        file.save(filepath)
+
         try:
-            file.save(filepath) # Salva o arquivo temporariamente
-            df = pd.read_excel(filepath) # Lê o arquivo Excel com pandas
+            if filename.lower().endswith('.csv'):
+                df = pd.read_csv(filepath)
+            else:
+                df = pd.read_excel(filepath)
+
+# Corrige colunas de data/hora para string
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]):
+                    df[col] = df[col].astype(str)
+            df = df.fillna("") # Preenche valores NaN com string vazia
+
+# Corrige colunas de data/hora para string
         except Exception as e:
             if os.path.exists(filepath):
                 os.remove(filepath)
@@ -783,9 +825,17 @@ def upload_excel_route(): # Renomeado para evitar conflito com 'upload_excel' de
         # Remove o arquivo temporário após o upload bem-sucedido
         if os.path.exists(filepath):
             os.remove(filepath)
-        return jsonify({'message': 'Arquivo enviado e planilha criada com sucesso!', 'sheet_url': sheet_url})
+        analysis_md = dataframe_to_markdown_analysis(df)
+        return jsonify({
+            'message': 'Arquivo enviado e planilha criada com sucesso!',
+            'sheet_url': sheet_url,
+            'analysis': analysis_md
+        })
+    elif 'error' in response:
+        return jsonify({'error': 'Mensagem de erro'}), 500
     else:
-        return jsonify({'error': 'Tipo de arquivo não suportado. Apenas .xlsx e .xls são permitidos.'}), 400
+        return jsonify({'error': 'Formato de arquivo inválido.'}), 400
+    
 
 # --- Rota de Chat Principal ---
 @app.route("/chat", methods=["POST"])
