@@ -64,7 +64,8 @@ Se context() identificar a trigger "quando vai", ele ativa o get_response() e ch
 
 Essa funcionalidade torna o ChatBoy *extremamente útil no dia a dia*, mantendo o foco em entretenimento e informação.
 
-![image](https://github.com/user-attachments/assets/8a0a6ed5-e0be-4088-80a8-e9540e3531cb)
+![Imagem do WhatsApp de 2025-06-29 à(s) 14 06 06_05c93044](https://github.com/user-attachments/assets/7996df06-1168-4dd1-a687-a4b71050c1c5)
+
 
 
 ---
