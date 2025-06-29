@@ -6,12 +6,17 @@ const sendButton = document.getElementById("sendButton");
 function addMessage(text, sender = "bot") {
     const chatBody = document.getElementById("chatBody");
     const messageDiv = document.createElement("div");
-    messageDiv.className = `chat-message ${sender}`;
-    const contentDiv = document.createElement("div");
-    contentDiv.className = "message-content";
-    // Renderiza markdown
-    contentDiv.innerHTML = marked.parse(text);
-    messageDiv.appendChild(contentDiv);
+    messageDiv.classList.add("chat-message", sender);
+
+    const messageContent = document.createElement("div");
+    messageContent.classList.add("message-content");
+
+    const messageText = document.createElement("p");
+    messageText.classList.add("message-text");
+    messageText.innerHTML = marked.parse(text); // Usar innerHTML para permitir negrito (**) ou links
+
+    messageContent.appendChild(messageText);
+    messageDiv.appendChild(messageContent);
     chatBody.appendChild(messageDiv);
     chatBody.scrollTop = chatBody.scrollHeight;
 }
