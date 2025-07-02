@@ -630,6 +630,24 @@ def add_row_to_sheet(spreadsheet_name, worksheet_name, row_data):
 def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
 
+     # --- Trigger para comparação de preços ---
+    if user_message_normalized.startswith("comparar preco de ") or user_message_normalized.startswith("comparar preço de "):
+        game = user_message[len("comparar preco de "):].strip() if "comparar preco de " in user_message_normalized else user_message[len("comparar preço de "):].strip()
+        if game:
+            markdown = get_game_price_comparison(game)
+            return {"response": markdown, "action": "none"}
+        else:
+            return {"response": "Qual jogo você quer comparar os preços?", "action": "none"}
+
+    # --- Trigger para promoções ---
+    if user_message_normalized.startswith("tem promocao do ") or user_message_normalized.startswith("tem promoção do "):
+        game = user_message[len("tem promocao do "):].strip() if "tem promocao do " in user_message_normalized else user_message[len("tem promoção do "):].strip()
+        if game:
+            markdown = get_game_deals(game)
+            return {"response": markdown, "action": "none"}
+        else:
+            return {"response": "Qual jogo você quer ver as promoções?", "action": "none"}
+        
     if user_message_normalized.endswith("e bom?"):
         topic = user_message_normalized[:-len("e bom?")].strip()
         query_for_search = f"{topic} é bom?"
@@ -838,7 +856,94 @@ def upload_excel_route(): # Renomeado para evitar conflito com 'upload_excel' de
     else:
         return jsonify({'error': 'Formato de arquivo inválido.'}), 400
     
+import requests
 
+def get_usd_brl():
+    """Busca a cotação do dólar em relação ao real (BRL)."""
+    try:
+        # Usando a API AwesomeAPI (sem autenticação)
+        cotacao = requests.get("https://economia.awesomeapi.com.br/json/last/USD-BRL").json()
+        return float(cotacao["USDBRL"]["bid"])
+    except Exception:
+        return 5.0  # fallback para um valor aproximado
+
+def get_game_price_comparison(title="Elden Ring"):
+    """
+    Busca as melhores ofertas do jogo nas principais lojas e retorna um markdown comparativo em real.
+    """
+    url = "https://www.cheapshark.com/api/1.0/deals"
+    params = {
+        "title": title,
+        "pageSize": 10,
+        "sortBy": "Price"
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if not data:
+        return f"⚠️ Nenhuma promoção encontrada para '{title}'."
+
+    # Cotação do dólar
+    usd_brl = get_usd_brl()
+
+    # Mapeia storeID para nome da loja
+    stores_resp = requests.get("https://www.cheapshark.com/api/1.0/stores")
+    stores = {store["storeID"]: store["storeName"] for store in stores_resp.json()}
+
+    markdown = f"## 💸 Comparativo de preços para **{title}** (em real)\n\n"
+    markdown += "| Loja | Preço (BRL) | Preço Normal (BRL) | Desconto | Link |\n"
+    markdown += "|------|-------------|--------------------|----------|------|\n"
+
+    # Mostra só uma oferta por loja (a melhor)
+    best_deals = {}
+    for game in data:
+        store_id = game["storeID"]
+        if store_id not in best_deals:
+            best_deals[store_id] = game
+
+    for store_id, game in best_deals.items():
+        loja = stores.get(store_id, f"Loja {store_id}")
+        preco = float(game['salePrice']) * usd_brl
+        preco_normal = float(game['normalPrice']) * usd_brl
+        desconto = f"{round(float(game['savings']))}%"
+        link = f"[Abrir]({'https://www.cheapshark.com/redirect?dealID=' + game['dealID']})"
+        markdown += f"| {loja} | R$ {preco:.2f} | R$ {preco_normal:.2f} | {desconto} | {link} |\n"
+
+    markdown += "\n---\n"
+    markdown += "_Os preços são aproximados e podem variar conforme a cotação do dólar. Clique em 'Abrir' para ir direto à oferta._"
+    return markdown
+
+def get_game_deals(title="Elden Ring"):
+    url = "https://www.cheapshark.com/api/1.0/deals"
+    params = {
+        "title": title,
+        "pageSize": 3,  # número de resultados
+        "sortBy": "Savings"
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if not data:
+        return f"⚠️ Nenhuma promoção encontrada para '{title}'."
+
+    usd_brl = get_usd_brl()
+
+    markdown = f"🎮 Promoções para **{title}** (valores em real):\n\n"
+    for game in data:
+        preco = float(game['salePrice']) * usd_brl
+        preco_normal = float(game['normalPrice']) * usd_brl
+        desconto = f"{round(float(game['savings']))}%"
+        link = f"https://www.cheapshark.com/redirect?dealID={game['dealID']}"
+        loja = game.get('storeID', 'Loja')
+        markdown += (
+            f"- **{game['title']}**\n"
+            f"  - 💰 Preço: R$ {preco:.2f} (normal: R$ {preco_normal:.2f})\n"
+            f"  - 💸 Desconto: {desconto}\n"
+            f"  - 🔗 [Ver na loja]({link})\n"
+            "---\n"
+        )
+    markdown += "\n_Valores aproximados, convertidos pela cotação atual do dólar._"
+    return markdown
 # --- Rota de Chat Principal ---
 @app.route("/chat", methods=["POST"])
 def chat():
