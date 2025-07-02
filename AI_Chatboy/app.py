@@ -631,8 +631,9 @@ def get_response(user_message):
     user_message_normalized = normalize_text(user_message)
 
      # --- Trigger para comparação de preços ---
-    if user_message_normalized.startswith("comparar preco de ") or user_message_normalized.startswith("comparar preço de "):
-        game = user_message[len("comparar preco de "):].strip() if "comparar preco de " in user_message_normalized else user_message[len("comparar preço de "):].strip()
+    match_compare = re.match(r"comparar prec[co|cos]{1,2} (de|do|da) (.+)", user_message_normalized)
+    if match_compare:
+        game = match_compare.group(2).strip()
         if game:
             markdown = get_game_price_comparison(game)
             return {"response": markdown, "action": "none"}
@@ -640,8 +641,9 @@ def get_response(user_message):
             return {"response": "Qual jogo você quer comparar os preços?", "action": "none"}
 
     # --- Trigger para promoções ---
-    if user_message_normalized.startswith("tem promocao do ") or user_message_normalized.startswith("tem promoção do "):
-        game = user_message[len("tem promocao do "):].strip() if "tem promocao do " in user_message_normalized else user_message[len("tem promoção do "):].strip()
+    match_promo = re.match(r"(tem )?promoc[aão]{2,3}( de| do| da)? (.+)", user_message_normalized)
+    if match_promo:
+        game = match_promo.group(3).strip()
         if game:
             markdown = get_game_deals(game)
             return {"response": markdown, "action": "none"}
