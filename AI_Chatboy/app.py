@@ -14,7 +14,6 @@ import re
 from google.oauth2.service_account import Credentials
 from werkzeug.utils import secure_filename
 import pandas as pd
-import pytz
 import psycopg2
 import sys
 from werkzeug.security import generate_password_hash, check_password_hash # Adicione estes aqui também
