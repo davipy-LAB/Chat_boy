@@ -1,26 +1,49 @@
 import random
 import os
 import json
-from urllib import response
+# from urllib import response # Este import não é necessário e pode ser removido
 import gspread
 from datetime import datetime
 from dotenv import load_dotenv
 import unicodedata
-from flask import Flask, request, jsonify, render_template
+# Adicione/Mantenha todos os imports do Flask aqui, incluindo 'session', 'url_for', 'g'
+from flask import Flask, request, jsonify, render_template, session, url_for, g, redirect
 from flask_cors import CORS
 import requests
 import re
 from google.oauth2.service_account import Credentials
 from werkzeug.utils import secure_filename
 import pandas as pd
-import pytz # Importar pytz para lidar com fusos horários
-from google.oauth2.service_account import Credentials
+import pytz
+import psycopg2
+import sys
+from werkzeug.security import generate_password_hash, check_password_hash # Adicione estes aqui também
 
+# --- Inicialização do Flask App ---
 app = Flask(__name__)
-CORS(app)
+CORS(app) # Se você estiver usando CORS
 
-# --- Classe de contexto para armazenar informações do usuário ---
-class ContextManager: # Renomeado para evitar conflito com 'context' global
+# --- Carrega variáveis de ambiente (DEVE SER CHAMADO ANTES DE ACESSAR OS.GETENV) ---
+load_dotenv()
+
+# --- CHAVE SECRETA PARA SESSÕES ---
+# ESSENCIAL: Definir a secret_key logo após a criação da instância do Flask app
+app.secret_key = os.getenv('SECRET_KEY')
+
+# Adicione uma verificação robusta para a secret_key
+if not app.secret_key:
+    print("ATENÇÃO: FLASK_SECRET_KEY não definida no .env! Gerando uma para desenvolvimento. **NÃO USE EM PRODUÇÃO.**", file=sys.stderr)
+    sys.stderr.flush()
+    app.secret_key = os.urandom(24).hex() # Gera uma chave aleatória e a converte para string hexadecimal
+    print(f"Chave gerada (apenas para DEBUG): {app.secret_key}", file=sys.stderr)
+    sys.stderr.flush()
+# --- FIM DA CHAVE SECRETA ---
+
+
+# --- Classe de contexto para armazenar informações do usuário (se estiver usando) ---
+# Mantenha esta classe se ela for usada em outras partes do seu código.
+# Se for apenas para o login/sessão, a session do Flask é mais adequada.
+class ContextManager:
     def __init__(self):
         self.context = {}
 
@@ -37,78 +60,61 @@ class ContextManager: # Renomeado para evitar conflito com 'context' global
         else:
             self.context = {}
 
-# Inicializa o contexto global
-context = ContextManager() # Usando o nome correto da classe
+context = ContextManager()
 
-# --- Carrega variáveis de ambiente ---
-load_dotenv()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-# --- CHAVES DE API ---
+# --- CHAVES DE API (Mantenha suas chaves de API aqui) ---
 OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 NEWSAPI_API_KEY = os.getenv('NEWSAPI_API_KEY')
 if not NEWSAPI_API_KEY:
-    # Não levante exceção aqui, apenas imprima um aviso e permita que outras partes do código funcionem
-    print("AVISO: A chave da API do NewsAPI não foi encontrada. Notícias não funcionarão.")
+    print("AVISO: A chave da API do NewsAPI não foi encontrada. Notícias não funcionarão.", file=sys.stderr)
+    sys.stderr.flush()
 NEWSAPI_BASE_URL = "https://newsapi.org/v2/top-headlines"
 
 GOOGLE_SEARCH_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
 GOOGLE_CSE_ID = os.getenv('GOOGLE_CSE_ID')
 if not GOOGLE_SEARCH_API_KEY or not GOOGLE_CSE_ID:
-    print("AVISO: Chaves da API do Google Search (CSE) não configuradas. Pesquisa web não funcionará.")
+    print("AVISO: Chaves da API do Google Search (CSE) não configuradas. Pesquisa web não funcionará.", file=sys.stderr)
+    sys.stderr.flush()
 GOOGLE_SEARCH_BASE_URL = "https://www.googleapis.com/customsearch/v1"
 
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 if not YOUTUBE_API_KEY:
-    print("AVISO: Chave da API do YouTube não encontrada. Funções do YouTube não funcionarão.")
+    print("AVISO: Chave da API do YouTube não encontrada. Funções do YouTube não funcionarão.", file=sys.stderr)
+    sys.stderr.flush()
 YOUTUBE_BASE_URL = "https://www.googleapis.com/youtube/v3/search"
 
 # --- Google Sheets Auth ---
 SHEET_ID = os.getenv('SHEET_ID')
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = 'AI_Chatboy/credentials.json'
+SERVICE_ACCOUNT_FILE = 'AI_Chatboy/credentials.json' # <-- VERIFIQUE ESTE CAMINHO!
 
 gs_client = None
 try:
     if os.path.exists(SERVICE_ACCOUNT_FILE):
         creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         gs_client = gspread.authorize(creds)
-        print(f"Conexão com o Google Sheets estabelecida via arquivo: '{SERVICE_ACCOUNT_FILE}'.")
+        print(f"Conexão com o Google Sheets estabelecida via arquivo: '{SERVICE_ACCOUNT_FILE}'.", file=sys.stderr)
+        sys.stderr.flush()
     else:
         credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
         if credentials_json_str:
             credentials_info = json.loads(credentials_json_str)
             gs_client = gspread.service_account_from_dict(credentials_info)
-            print("Conexão com o Google Sheets estabelecida via variável de ambiente.")
+            print("Conexão com o Google Sheets estabelecida via variável de ambiente.", file=sys.stderr)
+            sys.stderr.flush()
         else:
-            print("AVISO: Nem 'credentials.json' nem 'GOOGLE_SHEETS_CREDENTIALS' foram encontrados. Funções do Google Sheets não funcionarão.")
+            print("AVISO: Nem 'credentials.json' (ou nome do arquivo especificado) nem 'GOOGLE_SHEETS_CREDENTIALS' foram encontrados. Funções do Google Sheets não funcionarão.", file=sys.stderr)
+            sys.stderr.flush()
 except Exception as e:
-    print(f"ERRO: Não foi possível conectar ao Google Sheets. Verifique suas credenciais. Erro: {e}")
-gs_client = None
-try:
-    # Preferimos o arquivo de credenciais se ele existir
-    if os.path.exists(SERVICE_ACCOUNT_FILE):
-        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-        gs_client = gspread.authorize(creds)
-        print(f"Conexão com o Google Sheets estabelecida via arquivo: '{SERVICE_ACCOUNT_FILE}'.")
-    else:
-        # Tenta a variável de ambiente como fallback
-        credentials_json_str = os.getenv('GOOGLE_SHEETS_CREDENTIALS')
-        if credentials_json_str:
-            credentials_info = json.loads(credentials_json_str)
-            gs_client = gspread.service_account_from_dict(credentials_info)
-            print("Conexão com o Google Sheets estabelecida via variável de ambiente.")
-        else:
-            print("AVISO: Nem 'credentials.json' nem 'GOOGLE_SHEETS_CREDENTIALS' foram encontrados. Funções do Google Sheets não funcionarão.")
-except Exception as e:
-    print(f"ERRO: Não foi possível conectar ao Google Sheets. Verifique suas credenciais. Erro: {e}")
+    print(f"ERRO: Não foi possível conectar ao Google Sheets. Verifique suas credenciais. Erro: {e}", file=sys.stderr)
+    sys.stderr.flush()
 
 DEFAULT_CITY = "Rio de Janeiro"
+
+# ... (o restante do seu código, dicionários de diálogos, funções auxiliares, etc.) ...
 
 # --- Dicionários de diálogos e respostas ---
 # (Mantidos como estavam, mas a lógica de uso será no get_response)
@@ -627,10 +633,62 @@ def add_row_to_sheet(spreadsheet_name, worksheet_name, row_data):
         return {"success": False, "message": f"Erro inesperado ao adicionar linha à planilha: {e}"}
 
 # Função para obter a resposta da IA
-def get_response(user_message):
+def get_response(user_message, context=None):
     user_message_normalized = normalize_text(user_message)
+    if not context:
+        context = ContextManager()
+    # Programar feedback no chat
+    if user_message_normalized.startswith("tive uma ideia:"): # Apenas ajustei o espaço para consistência
+        idea = user_message[len("tive uma ideia:"):].strip()
 
-     # --- Trigger para comparação de preços ---
+        if not idea:
+            return {"response": "Por favor, descreva sua ideia após 'tive uma ideia:'.", "action": "none"}
+        
+        # --- COMEÇO DA LÓGICA DE SALVAR FEEDBACK NO BANCO DE DADOS ---
+        conn = None
+        cur = None
+        try:
+            # 1. Obter o user_id do usuário logado
+            # Usamos g.user para acessar o usuário logado, que é carregado em @app.before_request
+            if not g.user:
+                return {"response": "Desculpe, você precisa estar logado para enviar uma ideia.", "action": "none"}
+            
+            user_id = g.user['id'] # Pega o ID do dicionário g.user
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            # 2. Verificar se a ideia já existe para este usuário
+            cur.execute(
+                "SELECT id FROM feedback WHERE user_id = %s AND message = %s",
+                (user_id, idea)
+            )
+            existing_idea = cur.fetchone()
+
+            if existing_idea:
+                return {"response": "Você já enviou essa ideia antes. Por favor, tente outra.", "action": "none"}
+            else:
+                # 3. Inserir a nova ideia no banco de dados
+                cur.execute(
+                    "INSERT INTO feedback (user_id, message) VALUES (%s, %s)",
+                    (user_id, idea)
+                )
+                conn.commit() # Salva a transação no banco de dados
+                return {"response": "Ótima ideia! Vou anotar isso.", "action": "none"}
+
+        except Exception as e:
+            # Em caso de erro, desfaz a transação se houver uma conexão ativa
+            if conn:
+                conn.rollback()
+            print(f"ERRO ao salvar feedback no banco de dados: {e}", file=sys.stderr)
+            sys.stderr.flush()
+            return {"response": "Desculpe, não consegui salvar sua ideia. Tente novamente mais tarde.", "action": "none"}
+        finally:
+            # Garante que o cursor e a conexão sejam fechados
+            if cur:
+                cur.close()
+            if conn:
+                conn.close()
     match_compare = re.match(r"comparar prec[co|cos]{1,2} (de|do|da) (.+)", user_message_normalized)
     if match_compare:
         game = match_compare.group(2).strip()
@@ -853,7 +911,7 @@ def upload_excel_route(): # Renomeado para evitar conflito com 'upload_excel' de
             'sheet_url': sheet_url,
             'analysis': analysis_md
         })
-    elif 'error' in response:
+    elif 'error' in responses:
         return jsonify({'error': 'Mensagem de erro'}), 500
     else:
         return jsonify({'error': 'Formato de arquivo inválido.'}), 400
@@ -946,22 +1004,10 @@ def get_game_deals(title="Elden Ring"):
         )
     markdown += "\n_Valores aproximados, convertidos pela cotação atual do dólar._"
     return markdown
-# --- Rota de Chat Principal ---
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.get_json()
-    user_message = data.get("message", "")
-    
-    # get_response agora sempre retorna um dicionário JSON pronto
-    response_data = get_response(user_message)
-    return jsonify(response_data)
- # Adicionado debug=True para desenvolvimento
 
 from flask import Flask, render_template, request, redirect, jsonify
 import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
-
-app = Flask(__name__)
 
 # Conexão com PostgreSQL
 import os
@@ -999,50 +1045,143 @@ def get_db_connection():
         print(f"*** ERRO NA CONEXÃO DO BANCO DE DADOS: {e} ***")
         raise # Re-levanta a exceção para que o Flask a capture
 
+from flask import g
+
+# --- Rota de Chat Principal ---
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    user_message = data.get("message", "")
+    response_data = get_response(user_message)
+    return jsonify(response_data)
+
+
+# --- @app.before_request para carregar usuário logado ---
+@app.before_request
+def load_logged_in_user():
+    user_id = session.get("user_id") # Pega o user_id da sessão
+    if user_id is None:
+        g.user = None # Se não há user_id na sessão, não há usuário logado
+    else:
+        conn = None # Inicializa conn e cur para garantir que estejam definidos no finally
+        cur = None
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT id, username FROM users WHERE id = %s", (user_id,))
+            user_data = cur.fetchone() # user_data será (id, username)
+            if user_data:
+                g.user = {"id": user_data[0], "username": user_data[1]}
+            else:
+                g.user = None # Se o user_id na sessão não corresponde a um usuário válido
+                session.pop('user_id', None) # Limpa a sessão para evitar loops
+                session.pop('username', None) # Limpa o username também
+        except Exception as e:
+            print(f"Erro em @before_request ao carregar usuário: {e}", file=sys.stderr)
+            sys.stderr.flush()
+            g.user = None # Garante que g.user é None em caso de erro
+            session.pop('user_id', None) # Limpa a sessão para evitar erro persistente
+            session.pop('username', None)
+        finally:
+            if cur:
+                cur.close()
+            if conn:
+                conn.close()
+
+
+# --- Rota Principal (index) ---
 @app.route("/")
 def index():
-    return render_template("index.html")
+    # Agora, o username é obtido de g.user, que é carregado por @app.before_request
+    username = g.user['username'] if g.user else None
+    return render_template("index.html", username=username)
 
+# --- Rota para Criar Perfil ---
 @app.route("/create_profile", methods=["GET", "POST"])
 def create_profile():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
+
         if not username or not password or not confirm_password:
             return render_template("create_profile.html", message="Preencha todos os campos.")
         if password != confirm_password:
             return render_template("create_profile.html", message="As senhas não coincidem.")
+        
         password_hash = generate_password_hash(password)
-        conn = get_db_connection()
-        cur = conn.cursor()
+        conn = None
+        cur = None
         try:
+            conn = get_db_connection()
+            cur = conn.cursor()
             cur.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
             conn.commit()
+            return redirect(url_for('login_profile'))
+        except psycopg2.errors.UniqueViolation:
+            if conn:
+                conn.rollback()
+            return render_template("create_profile.html", message="Usuário já existe. Escolha outro nome de usuário.")
         except Exception as e:
-            return render_template("create_profile.html", message="Usuário já existe ou erro no cadastro.")
+            if conn:
+                conn.rollback()
+            print(f"Erro ao criar perfil: {e}", file=sys.stderr)
+            sys.stderr.flush()
+            return render_template("create_profile.html", message="Erro no cadastro. Tente novamente.")
         finally:
-            cur.close()
-            conn.close()
-        return redirect("/login_profile")
+            if cur:
+                cur.close()
+            if conn:
+                conn.close()
     return render_template("create_profile.html")
 
+# --- Rota de Login ---
 @app.route("/login_profile", methods=["GET", "POST"])
 def login_profile():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id, password_hash FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-        cur.close()
-        conn.close()
-        if user and check_password_hash(user[1], password):
-            return redirect(f"/" + f"?user_id={user[0]}")  # Redireciona para a página principal com o ID do usuário
-        else:
-            return render_template("login_profile.html", message="Credenciais inválidas!")
+
+        conn = None
+        cur = None
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            # Selecione o ID, username e password_hash
+            cur.execute("SELECT id, username, password_hash FROM users WHERE username = %s", (username,))
+            user_data = cur.fetchone() # user_data agora será (id, username, password_hash)
+            
+            if user_data and check_password_hash(user_data[2], password): # user_data[2] é o password_hash
+                user_id = user_data[0]
+                logged_in_username = user_data[1]
+                
+                # Armazena o ID e o username na sessão
+                session['user_id'] = user_id
+                session['username'] = logged_in_username # Armazena o nome de usuário também
+
+                return redirect(url_for('index')) # Redireciona para a página principal
+            else:
+                return render_template("login_profile.html", message="Credenciais inválidas!")
+        except Exception as e:
+            print(f"Erro durante o login: {e}", file=sys.stderr)
+            sys.stderr.flush()
+            return render_template("login_profile.html", message="Erro ao tentar fazer login. Tente novamente.")
+        finally:
+            if cur:
+                cur.close()
+            if conn:
+                conn.close()
     return render_template("login_profile.html")
+
+# --- Nova Rota de Logout ---
+@app.route("/logout")
+def logout():
+    session.pop('user_id', None)
+    session.pop('username', None) # Remove o username da sessão também
+    return redirect(url_for('login_profile'))
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
+
+

@@ -55,6 +55,11 @@
             </div>
         </div>
         <div class="sidebar-body">
+            {% if g.user %}
+                <p>Seja bem-vindo, {{ g.user.username }}!</p>
+            {% else %}
+                <p>Bem-vindo, visitante!</p>
+            {% endif %}
             <div>
                 <button id="button-create" class="button-create"><i class="fas fa-user-plus"></i> Criar Perfil</button>
             </div>
