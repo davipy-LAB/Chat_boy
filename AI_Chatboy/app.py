@@ -1022,7 +1022,8 @@ def get_db_connection():
     db_user = os.getenv('USER')
     db_password = os.getenv('PASSWORD') # CUIDADO: Não mantenha isso em produção!
     db_host = os.getenv('HOST')
-    db_port = os.getenv('DBPORT')
+    db_port_env = os.getenv('DB_PORT')
+    db_port = int(db_port_env) if db_port_env else 5432
 
     print(f"DEBUG: DATABASE (repr): {repr(db_name)}")
     print(f"DEBUG: USER (repr): {repr(db_user)}")
