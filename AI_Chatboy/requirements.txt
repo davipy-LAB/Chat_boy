@@ -7,7 +7,6 @@ gspread==6.0.0
 openpyxl==3.1.2
 Werkzeug==3.0.1
 pandas
-sys
 psycopg2
 werkzeug.security
 tabulate
