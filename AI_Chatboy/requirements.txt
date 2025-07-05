@@ -8,7 +8,6 @@ openpyxl==3.1.2
 Werkzeug==3.0.1
 pandas
 psycopg2
-werkzeug.security
 tabulate
 pytz==2024.1
 google-auth==2.29.0
