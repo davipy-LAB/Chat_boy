@@ -955,6 +955,94 @@ def chat():
     # get_response agora sempre retorna um dicionário JSON pronto
     response_data = get_response(user_message)
     return jsonify(response_data)
+ # Adicionado debug=True para desenvolvimento
+
+from flask import Flask, render_template, request, redirect, jsonify
+import psycopg2
+from werkzeug.security import generate_password_hash, check_password_hash
+
+app = Flask(__name__)
+
+# Conexão com PostgreSQL
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+# Certifique-se que load_dotenv() está sendo chamado antes de get_db_connection()
+# Idealmente, no topo do seu app.py, como você já tem.
+load_dotenv()
+
+def get_db_connection():
+    db_name = os.getenv('DATABASE')
+    db_user = os.getenv('USER')
+    db_password = os.getenv('PASSWORD') # CUIDADO: Não mantenha isso em produção!
+    db_host = os.getenv('HOST')
+    db_port = os.getenv('PORT')
+
+    print(f"DEBUG: DATABASE (repr): {repr(db_name)}")
+    print(f"DEBUG: USER (repr): {repr(db_user)}")
+    print(f"DEBUG: PASSWORD (repr): {repr(db_password)}") # **IMPORTANTE PARA DEPURAR**
+    print(f"DEBUG: HOST (repr): {repr(db_host)}")
+    print(f"DEBUG: DB_PORT (repr): {repr(db_port)}")
+
+    try:
+        conn = psycopg2.connect(
+            database=db_name,
+            user=db_user,
+            password=db_password,
+            host=db_host,
+            port=db_port
+            # Opcional: client_encoding='UTF8' - menos provável de resolver se o erro é na string de entrada
+        )
+        return conn
+    except Exception as e:
+        print(f"*** ERRO NA CONEXÃO DO BANCO DE DADOS: {e} ***")
+        raise # Re-levanta a exceção para que o Flask a capture
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/create_profile", methods=["GET", "POST"])
+def create_profile():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
+        if not username or not password or not confirm_password:
+            return render_template("create_profile.html", message="Preencha todos os campos.")
+        if password != confirm_password:
+            return render_template("create_profile.html", message="As senhas não coincidem.")
+        password_hash = generate_password_hash(password)
+        conn = get_db_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("INSERT INTO users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
+            conn.commit()
+        except Exception as e:
+            return render_template("create_profile.html", message="Usuário já existe ou erro no cadastro.")
+        finally:
+            cur.close()
+            conn.close()
+        return redirect("/login_profile")
+    return render_template("create_profile.html")
+
+@app.route("/login_profile", methods=["GET", "POST"])
+def login_profile():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, password_hash FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+        if user and check_password_hash(user[1], password):
+            return redirect(f"/" + f"?user_id={user[0]}")  # Redireciona para a página principal com o ID do usuário
+        else:
+            return render_template("login_profile.html", message="Credenciais inválidas!")
+    return render_template("login_profile.html")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True) # Adicionado debug=True para desenvolvimento
+    app.run(debug=True, host="0.0.0.0", port=5000)

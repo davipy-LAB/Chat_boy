@@ -1,7 +1,6 @@
 const chatBody = document.getElementById("chatBody");
 const userInput = document.getElementById("userInput");
 const sendButton = document.getElementById("sendButton");
-
 // Função para adicionar mensagens ao chat
 function addMessage(text, sender = "bot") {
     const chatBody = document.getElementById("chatBody");
@@ -195,3 +194,12 @@ document.getElementById('uploadForm').onsubmit = async function(e) {
 document.getElementById('file').onchange = function() {
     document.getElementById('uploadForm').dispatchEvent(new Event('submit'));
 };
+
+// Exemplo: se você tem botões com IDs 'btnLogin' e 'btnCreateProfile'
+document.getElementById('login-button')?.addEventListener('click', () => {
+    window.location.href = '/login_profile';
+});
+
+document.getElementById('button-create')?.addEventListener('click', () => {
+    window.location.href = '/create_profile';
+});

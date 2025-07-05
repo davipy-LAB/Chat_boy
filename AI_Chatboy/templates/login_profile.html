@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ChatBoy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_chat.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="icon" href="https://example.com/favicon.png">
+    <style>
+        .login-container {
+            background: rgba(20, 22, 34, 0.98);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            max-width: 370px;
+            margin: 80px auto 0 auto;
+            padding: 36px 32px 28px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .login-container h2 {
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+            margin-bottom: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .login-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .login-form label {
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1em;
+            margin-bottom: 4px;
+        }
+        .login-form input {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: none;
+            background: #23263a;
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+        }
+        .login-form input:focus {
+            border: 1.5px solid #00ff99;
+        }
+        .login-form button {
+            background: linear-gradient(90deg, #00ff99 0%, #00cfff 100%);
+            color: #181c24;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-form button:hover {
+            background: linear-gradient(90deg, #00cfff 0%, #00ff99 100%);
+        }
+        .login-footer {
+            margin-top: 18px;
+            color: #aaa;
+            font-size: 0.95em;
+            text-align: center;
+        }
+        .login-footer a {
+            color: #00ff99;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+        #login-message {
+            margin-top: 12px;
+            color: #ff4d4f;
+            font-size: 1em;
+            text-align: center;
+        }
+        #tsparticles {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            top: 0; left: 0;
+        }
+        body {
+            background: #0d1117;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="tsparticles"></div>
+    <div class="login-container">
+        <h2><i class="fas fa-user-circle"></i> Login ChatBoy</h2>
+        <form class="login-form" method="POST" action="/login_profile">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autocomplete="username">
+            <label for="password">Senha</label>
+            <input type="password" id="password" name="password" placeholder="Digite sua senha" required autocomplete="current-password">
+            <button id="login-button" class="login-button" href="{{ url_for('index') }}" type="submit">Entrar</button>
+        </form>
+        <div >{{ message if message }}</div>
+        <div class="login-footer">
+            Não tem conta? <a href="{{ url_for('create_profile') }}">Criar perfil</a>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+    <script>
+    tsParticles.load("tsparticles", {
+      particles: {
+        number: { value: 80 },
+        color: { value: "#ffffff" },
+        shape: { type: "circle" },
+        opacity: { value: 0.5 },
+        size: { value: 3 },
+        move: { enable: true, speed: 1 },
+        links: {
+          enable: true,
+          color: "#ffffff",
+          distance: 150,
+          opacity: 0.4,
+          width: 1
+        }
+      },
+      interactivity: {
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
+        },
+        modes: {
+          repulse: { distance: 100 },
+          push: { quantity: 4 }
+        }
+      },
+      background: {
+        color: "#0d1117"
+      }
+    });
+    </script>
+</body>
+</html>
