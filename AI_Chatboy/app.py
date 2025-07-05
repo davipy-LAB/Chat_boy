@@ -1022,7 +1022,7 @@ def get_db_connection():
     db_user = os.getenv('USER')
     db_password = os.getenv('PASSWORD') # CUIDADO: Não mantenha isso em produção!
     db_host = os.getenv('HOST')
-    db_port = os.getenv('PORT')
+    db_port = os.getenv('DBPORT')
 
     print(f"DEBUG: DATABASE (repr): {repr(db_name)}")
     print(f"DEBUG: USER (repr): {repr(db_user)}")
