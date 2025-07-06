@@ -636,55 +636,61 @@ def get_response(user_message, context=None):
     user_message_normalized = normalize_text(user_message)
     if not context:
         context = ContextManager()
-    # Programar feedback no chat
-    if user_message_normalized.startswith("tive uma ideia:"): # Apenas ajustei o espaço para consistência
+
+    if user_message_normalized.startswith("tive uma ideia:"):
         idea = user_message[len("tive uma ideia:"):].strip()
 
         if not idea:
             return {"response": "Por favor, descreva sua ideia após 'tive uma ideia:'.", "action": "none"}
         
-        # --- COMEÇO DA LÓGICA DE SALVAR FEEDBACK NO BANCO DE DADOS ---
         conn = None
         cur = None
         try:
-            # 1. Obter o user_id do usuário logado
-            # Usamos g.user para acessar o usuário logado, que é carregado em @app.before_request
             if not g.user:
                 return {"response": "Desculpe, você precisa estar logado para enviar uma ideia.", "action": "none"}
             
-            user_id = g.user['id'] # Pega o ID do dicionário g.user
-            message = g.user.get('message', '') # Pega a mensagem do dicionário g.user, se existir
+            user_id = g.user['id'] 
+            # REMOVA ESTA LINHA: message = g.user.get('message', '') # <<-- Isso está incorreto.
+            # A mensagem do feedback é 'idea' que você já extraiu.
+
+            # --- LÓGICA PARA NOME DA COLUNA DO FEEDBACK ---
+            env = os.getenv("ENV", "development") # Pega o ambiente atual
+            if env == "production":
+                feedback_column_name = "feedback_text"
+            else: # development
+                feedback_column_name = "message"
+            # --- FIM DA LÓGICA PARA NOME DA COLUNA DO FEEDBACK ---
+
 
             conn = get_db_connection()
             cur = conn.cursor()
 
-            # 2. Verificar se a ideia já existe para este usuário
+            # 2. Verificar se a ideia já existe para este usuário, usando o nome da coluna correto
+            # Usamos f-strings para inserir o nome da coluna dinamicamente
             cur.execute(
-                "SELECT id FROM feedback WHERE user_id = %s AND message = %s",
-                (user_id, message if message else idea) # Verifica se a mensagem já existe
+                f"SELECT id FROM feedback WHERE user_id = %s AND {feedback_column_name} = %s",
+                (user_id, idea) # Use 'idea' diretamente para a mensagem do feedback
             )
             existing_idea = cur.fetchone()
 
             if existing_idea:
                 return {"response": "Você já enviou essa ideia antes. Por favor, tente outra.", "action": "none"}
             else:
-                # 3. Inserir a nova ideia no banco de dados
+                # 3. Inserir a nova ideia no banco de dados, usando o nome da coluna correto
                 cur.execute(
-                    "INSERT INTO feedback (user_id, message) VALUES (%s, %s)",
-                    (user_id, message if message else idea) # Insere a mensagem ou a ideia
+                    f"INSERT INTO feedback (user_id, {feedback_column_name}) VALUES (%s, %s)",
+                    (user_id, idea) # Use 'idea' diretamente para a mensagem do feedback
                 )
-                conn.commit() # Salva a transação no banco de dados
+                conn.commit()
                 return {"response": "Ótima ideia! Vou anotar isso.", "action": "none"}
 
         except Exception as e:
-            # Em caso de erro, desfaz a transação se houver uma conexão ativa
             if conn:
                 conn.rollback()
             print(f"ERRO ao salvar feedback no banco de dados: {e}", file=sys.stderr)
             sys.stderr.flush()
             return {"response": "Desculpe, não consegui salvar sua ideia. Tente novamente mais tarde.", "action": "none"}
         finally:
-            # Garante que o cursor e a conexão sejam fechados
             if cur:
                 cur.close()
             if conn:
@@ -1179,14 +1185,6 @@ def login_profile():
             if conn:
                 conn.close()
     return render_template("login_profile.html")
-
-# --- Nova Rota de Logout ---
-@app.route("/logout")
-def logout():
-    session.pop('user_id', None)
-    session.pop('username', None) # Remove o username da sessão também
-    return redirect(url_for('login_profile'))
-
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

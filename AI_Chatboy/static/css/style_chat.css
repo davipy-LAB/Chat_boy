@@ -51,6 +51,9 @@ body {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(5px);
     padding: 20px;
+    padding-bottom: 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0 20px 20px 0;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease-in-out, background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     z-index: 10;
