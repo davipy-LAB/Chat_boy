@@ -653,6 +653,7 @@ def get_response(user_message, context=None):
                 return {"response": "Desculpe, você precisa estar logado para enviar uma ideia.", "action": "none"}
             
             user_id = g.user['id'] # Pega o ID do dicionário g.user
+            message = g.user.get('message', '') # Pega a mensagem do dicionário g.user, se existir
 
             conn = get_db_connection()
             cur = conn.cursor()
@@ -660,7 +661,7 @@ def get_response(user_message, context=None):
             # 2. Verificar se a ideia já existe para este usuário
             cur.execute(
                 "SELECT id FROM feedback WHERE user_id = %s AND message = %s",
-                (user_id, idea)
+                (user_id, message if message else idea) # Verifica se a mensagem já existe
             )
             existing_idea = cur.fetchone()
 
@@ -670,7 +671,7 @@ def get_response(user_message, context=None):
                 # 3. Inserir a nova ideia no banco de dados
                 cur.execute(
                     "INSERT INTO feedback (user_id, message) VALUES (%s, %s)",
-                    (user_id, idea)
+                    (user_id, message if message else idea) # Insere a mensagem ou a ideia
                 )
                 conn.commit() # Salva a transação no banco de dados
                 return {"response": "Ótima ideia! Vou anotar isso.", "action": "none"}
@@ -1008,28 +1009,35 @@ from flask import Flask, render_template, request, redirect, jsonify
 import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Conexão com PostgreSQL
 import os
 import psycopg2
 from dotenv import load_dotenv
 
-# Certifique-se que load_dotenv() está sendo chamado antes de get_db_connection()
-# Idealmente, no topo do seu app.py, como você já tem.
 load_dotenv()
 
 def get_db_connection():
-    db_name = os.getenv('DATABASE')
-    db_user = os.getenv('USER')
-    db_password = os.getenv('PASSWORD') # CUIDADO: Não mantenha isso em produção!
-    db_host = os.getenv('DB_HOST')
-    db_port_env = os.getenv('DB_PORT')
-    db_port = int(db_port_env) if db_port_env else 5432
+    env = os.getenv("ENV", "development")
 
-    print(f"DEBUG: DATABASE (repr): {repr(db_name)}")
-    print(f"DEBUG: USER (repr): {repr(db_user)}")
-    print(f"DEBUG: PASSWORD (repr): {repr(db_password)}") # **IMPORTANTE PARA DEPURAR**
-    print(f"DEBUG: HOST (repr): {repr(db_host)}")
-    print(f"DEBUG: DB_PORT (repr): {repr(db_port)}")
+    if env == "production":
+        db_name = os.getenv('DATABASE_DEPLOY')
+        db_user = os.getenv('USER_DEPLOY')
+        db_password = os.getenv('PASSWORD_DEPLOY')
+        db_host = os.getenv('DATABASE_URL')
+        db_port = int(os.getenv('DB_PORT_DEPLOY', 5432))
+    else:  # development
+        db_name = os.getenv('DATABASE')
+        db_user = os.getenv('USER')
+        db_password = os.getenv('PASSWORD')
+        db_host = os.getenv('DB_HOST', '127.0.0.1')
+        db_port = int(os.getenv('DB_PORT', 5432))
+
+    # Debug opcional
+    print(f"[DEBUG] Ambiente: {env}")
+    print(f"[DEBUG] Database: {os.getenv('DATABASE_DEPLOY' if env == 'production' else 'DATABASE')}")
+    print(f"[DEBUG] Host: {repr(db_host)}")
+    print(f"[DEBUG] Database: {repr(db_name)}")
+    print(f"[DEBUG] User: {repr(db_user)}")
+    print(f"[DEBUG] Port: {repr(db_port)}")
 
     try:
         conn = psycopg2.connect(
@@ -1038,12 +1046,11 @@ def get_db_connection():
             password=db_password,
             host=db_host,
             port=db_port
-            # Opcional: client_encoding='UTF8' - menos provável de resolver se o erro é na string de entrada
         )
         return conn
     except Exception as e:
         print(f"*** ERRO NA CONEXÃO DO BANCO DE DADOS: {e} ***")
-        raise # Re-levanta a exceção para que o Flask a capture
+        raise
 
 from flask import g
 
