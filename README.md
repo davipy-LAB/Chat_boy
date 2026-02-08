@@ -142,6 +142,7 @@ Acesse agora a *versão base online*:
 - Python, Django, Flask
 - Flask (utilizado no ChatBoy)
 - UX, UI
+- GCP
 - GML
 - NLP, ML (Machine Learning)
 
