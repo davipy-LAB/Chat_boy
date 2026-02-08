@@ -1,7 +1,7 @@
 # 🤖 ChatBoy — Assistente Virtual Autoral
 
 > *Versão atual:* v1.8.1
-> Criado por *Davi*, desenvolvedor de 16 anos com 4 anos de experiência em programação.
+> Criado por *Davi*, desenvolvedor de 17 anos com 4 anos de experiência em programação.
 
 O *ChatBoy* é uma assistente virtual desenvolvida 100% do zero, com uma *engine autoral* baseada em *Flask, **Flask-CORS* e *random*. Sem utilizar modelos de IA prontos, ele traz funcionalidades práticas e uma estrutura modular, focada em experiências reais de uso.
 
@@ -136,7 +136,7 @@ Acesse agora a *versão base online*:
 
 ## 👨‍💻 Sobre o criador
 
-*Davi*, 16 anos, programador autodidata com experiência em:
+*Davi*, 17 anos, programador autodidata com experiência em:
 - HTML, CSS, JavaScript
 - React.js, Node.js, Express
 - Python, Django, Flask
